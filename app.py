@@ -243,7 +243,6 @@ function toggleDescription(id) {
     const isCollapsed = description.getAttribute('data-collapsed') === 'true';
     description.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
 }
-
 // Add event listeners after page loads
 document.addEventListener('DOMContentLoaded', function() {
     const toggleButtons = document.querySelectorAll('.see-more-btn');
@@ -267,7 +266,7 @@ def load_tourism_data():
     """Load tourism data with images."""
     try:
         # Try to load from the specific path
-        df = pd.read_csv('data/processed/tourism_with_images.csv')
+        df = pd.read_csv('2/data/processed/tourism_with_images.csv')
         return df
     except FileNotFoundError:
         try:
@@ -277,7 +276,7 @@ def load_tourism_data():
         except FileNotFoundError:
             # Fallback to basic tourism data
             st.warning("File tourism_with_images.csv tidak ditemukan. Menggunakan data dasar.")
-            df = pd.read_csv('data/processed/tourism_processed.csv')
+            df = pd.read_csv('2/data/processed/tourism_processed.csv')
             # Add empty image_urls column if it doesn't exist
             if 'image_urls' not in df.columns:
                 df['image_urls'] = ""
@@ -319,18 +318,13 @@ def render_place_card(place, category, idx, use_columns=3):
         </div>
         <div class="place-name">{place_name}</div>
         <div class="place-location">📍 {place_city}</div>
-        <div id="description-{description_id}" class="collapsible-description" data-collapsed="true">
-            <div class="short-description">
-                {place_description[:150]}{'...' if len(place_description) > 150 else ''}
-            </div>
-            <div class="full-description">
-                {place_description}
-            </div>
-            <span class="see-more-btn" data-id="{description_id}" onclick="toggleDescription('{description_id}')"></span>
-        </div>
     </div>
     """, unsafe_allow_html=True)
 
+    # Now, use st.expander for the description part
+    with st.expander("Lihat deskripsi"):
+        st.write(place_description)
+        
 def get_gender_options():
     """Get gender options."""
     return ['Laki-laki', 'Perempuan']
@@ -410,7 +404,7 @@ def render_header():
 
 def render_user_profile_form():
     """Render the user profile form."""
-    st.markdown("<h2 class='sub-header'>👤 Profil Pengunjung</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='sub-header'>👤 Profil User</h2>", unsafe_allow_html=True)
     
     with st.form("user_profile_form"):
         st.markdown("<div class='card'>", unsafe_allow_html=True)
@@ -491,7 +485,7 @@ def render_user_profile_form():
                 # Show success message
                 st.success("Rekomendasi berhasil dibuat! Silakan lihat di bawah.")
             else:
-                st.error("Mohon lengkapi semua profil pengunjung.")
+                st.error("Mohon lengkapi semua profil user.")
 
 def render_recommendations():
     """Render the recommendations."""
@@ -581,7 +575,7 @@ def render_about():
         3. **Context-based Filtering**: Mempertimbangkan konteks perjalanan untuk rekomendasi yang lebih personal
         
         Algoritma menggunakan cosine similarity untuk menghitung kesesuaian antara profil pengguna dengan pola preferensi
-        yang telah diidentifikasi, serta memberikan bobot tambahan berdasarkan kota tujuan dan tipe perjalanan.
+        yang telah diidentifikasi, serta memberikan bobot tambahan berdasarkan tipe perjalanan yang dipilih.
         """)
 
 def main():
@@ -600,7 +594,6 @@ def main():
         const isCollapsed = description.getAttribute('data-collapsed') === 'true';
         description.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
     }
-
     // Ensure all toggle buttons work
     document.addEventListener('DOMContentLoaded', function() {
         const toggleButtons = document.querySelectorAll('.see-more-btn');
@@ -611,7 +604,6 @@ def main():
             });
         });
     });
-    
     // Re-add event listeners after Streamlit updates the DOM
     const observer = new MutationObserver(function(mutations) {
         const toggleButtons = document.querySelectorAll('.see-more-btn');
@@ -622,7 +614,6 @@ def main():
             });
         });
     });
-    
     observer.observe(document.body, { childList: true, subtree: true });
     </script>
     """, unsafe_allow_html=True)
