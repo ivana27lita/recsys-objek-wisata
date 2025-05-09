@@ -271,12 +271,12 @@ def load_tourism_data():
     except FileNotFoundError:
         try:
             # Try alternative path
-            df = pd.read_csv('2/data/processed/tourism_with_images.csv')
+            df = pd.read_csv('data/processed/tourism_with_images.csv')
             return df
         except FileNotFoundError:
             # Fallback to basic tourism data
             st.warning("File tourism_with_images.csv tidak ditemukan. Menggunakan data dasar.")
-            df = pd.read_csv('2/data/processed/tourism_processed.csv')
+            df = pd.read_csv('data/processed/tourism_processed.csv')
             # Add empty image_urls column if it doesn't exist
             if 'image_urls' not in df.columns:
                 df['image_urls'] = ""
