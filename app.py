@@ -220,6 +220,28 @@ st.markdown("""
         margin-bottom: 1rem;
     }
 </style>
+<<<<<<< HEAD
+=======
+
+<script>
+// JavaScript untuk toggle deskripsi
+function toggleDescription(id) {
+    const description = document.getElementById('description-' + id);
+    const isCollapsed = description.getAttribute('data-collapsed') === 'true';
+    description.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+}
+// Add event listeners after page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButtons = document.querySelectorAll('.see-more-btn');
+    toggleButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            toggleDescription(id);
+        });
+    });
+});
+</script>
+>>>>>>> 0c6634cd358f0e225bf2b0111e61ac2cf347feeb
 """, unsafe_allow_html=True)
 
 @st.cache_resource
@@ -237,7 +259,7 @@ def load_tourism_data():
     except FileNotFoundError:
         try:
             # Try alternative path
-            df = pd.read_csv('2/data/processed/tourism_with_images.csv')
+            df = pd.read_csv('data/processed/tourism_with_images.csv')
             return df
         except FileNotFoundError:
             # Fallback to basic tourism data
@@ -282,6 +304,10 @@ def render_place_card(place, category, idx, use_columns=3):
     with st.expander("Lihat deskripsi"):
         st.write(place_description)
 
+    # Now, use st.expander for the description part
+    with st.expander("Lihat deskripsi"):
+        st.write(place_description)
+        
 def get_gender_options():
     """Get gender options."""
     return ['Laki-laki', 'Perempuan', 'Tidak ingin menyebutkan']
@@ -384,6 +410,10 @@ def render_header():
 def render_user_profile_form():
     """Render the user profile form."""
     st.markdown("<h2 class='sub-header'>👤 Profil User</h2>", unsafe_allow_html=True)
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 0c6634cd358f0e225bf2b0111e61ac2cf347feeb
     with st.form("user_profile_form"):
         st.markdown("<p>Isi profil Anda untuk mendapatkan rekomendasi</p>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
@@ -448,7 +478,11 @@ def render_user_profile_form():
                 # Show custom success message
                 custom_success("Rekomendasi berhasil dibuat! Silakan lihat di bawah.")
             else:
+<<<<<<< HEAD
                 custom_error("Mohon lengkapi semua profil user.")
+=======
+                st.error("Mohon lengkapi semua profil user.")
+>>>>>>> 0c6634cd358f0e225bf2b0111e61ac2cf347feeb
 
 def render_recommendations():
     """Render the recommendations."""
@@ -531,6 +565,41 @@ def main():
     render_about()
     render_user_profile_form()
     render_recommendations()
+<<<<<<< HEAD
+=======
+    
+    # Add JavaScript for toggling descriptions
+    st.markdown("""
+    <script>
+    function toggleDescription(id) {
+        const description = document.getElementById('description-' + id);
+        const isCollapsed = description.getAttribute('data-collapsed') === 'true';
+        description.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+    }
+    // Ensure all toggle buttons work
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButtons = document.querySelectorAll('.see-more-btn');
+        toggleButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                toggleDescription(id);
+            });
+        });
+    });
+    // Re-add event listeners after Streamlit updates the DOM
+    const observer = new MutationObserver(function(mutations) {
+        const toggleButtons = document.querySelectorAll('.see-more-btn');
+        toggleButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                toggleDescription(id);
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    </script>
+    """, unsafe_allow_html=True)
+>>>>>>> 0c6634cd358f0e225bf2b0111e61ac2cf347feeb
 
 if __name__ == "__main__":
     main()
