@@ -338,9 +338,7 @@ def render_place_card(place, category, idx, use_columns=3):
         # Image at the top, then name and location, then expander for description
         st.markdown(f"""
         <div class="place-card-wrapper">
-            {category_badge}
-            <img src="{main_image}" class="place-image" alt="{place_name}" 
-                 onerror="this.onerror=null; this.src='https://via.placeholder.com/800x400?text=Gambar+Tidak+Tersedia';">
+            <img src="{main_image}" class="place-image" alt="{place_name}">
             <div class="place-info">
                 <div class="place-name">{place_name}</div>
                 <div class="place-location">📍 {place_city}</div>
@@ -353,7 +351,7 @@ def render_place_card(place, category, idx, use_columns=3):
         
         # Close the card wrapper div
         st.markdown('</div>', unsafe_allow_html=True)
-
+        
 def get_gender_options():
     """Get gender options."""
     return ['Laki-laki', 'Perempuan', 'Tidak ingin menyebutkan']
