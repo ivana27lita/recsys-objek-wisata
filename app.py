@@ -286,35 +286,35 @@ def get_place_images(place):
     return ["https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"]
 
 def render_place_card(place, category, idx, use_columns=3):
-    """Render a single place card with images and description."""
+    """Render a place card with image outside expander."""
     place_id = place.get('Place_Id', 0)
     place_name = place['Place_Name']
     place_city = place['City']
     place_description = place.get('Description', 'Tidak ada deskripsi.')
-
-    # Create unique ID for this description
-    description_id = f"{category}-{place_id}-{idx}"
-
-    # Get images for the place
+    
+    # Get image URLs - just use the first image for the card
     image_urls = get_place_images(place)
-
-    # Use only the first image for the card
-    primary_image = image_urls[0] if image_urls else "https://via.placeholder.com/400x300?text=No+Image+Available"
-
-    # Create a card with hover effect and collapsible description
-    st.markdown(f"""
-    <div class="place-card">
-        <div class="carousel">
-            <img src="{primary_image}" alt="{place_name}">
-        </div>
-        <div class="place-name">{place_name}</div>
-        <div class="place-location">📍 {place_city}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Now, use st.expander for the description part
-    with st.expander("Tentang " + place_name):
-        st.write(place_description)
+    main_image = image_urls[0] if image_urls else "https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"
+    
+    # Create a container for the entire card
+    with st.container():
+        # Create the entire card as a single structure
+        # Image at the top, then name and location, then expander for description
+        st.markdown(f"""
+        <div class="place-card-wrapper">
+            <img src="{main_image}" class="place-image" alt="{place_name}">
+            <div class="place-info">
+                <div class="place-name">{place_name}</div>
+                <div class="place-location">📍 {place_city}</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Add the expander for description only
+        with st.expander("Lihat Deskripsi " + place_name):
+            st.markdown(f'<div class="place-description">{place_description}</div>', unsafe_allow_html=True)
+        
+        # Close the card wrapper div
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def get_gender_options():
     """Get gender options."""
@@ -521,11 +521,11 @@ def render_recommendations():
             boost = 0
             final_score = score
         st.markdown(f"""
-    <div class='card' style='border-left: 5px solid {get_category_color(category)};'>
+    <div class='category-card' style='border-left: 5px solid {get_category_color(category)};'>
         <h3 class='category-header'>
-            {get_category_icon(category)} {category_title} 
-        </h3>
-        <p>{get_category_description(category)}</p>
+            {get_category_icon(category)} {category_title}
+        </h3>         
+        <p>{get_category_description(category)}</p>        
     </div>
 """, unsafe_allow_html=True)
         # Tampilkan pesan jika kategori ini menggunakan objek wisata dari kategori lain
@@ -542,9 +542,11 @@ def render_recommendations():
                     render_place_card(place, category, j, use_columns)
         else:
             st.warning(f"Tidak ditemukan objek wisata untuk kategori {category} di {user_profile['city']}. Silakan coba kota lain atau kategori lain.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Add spacing between categories
         if i < len(st.session_state.recommendations) - 1:
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
 def render_about():
     """Render information about the application."""
     with st.expander("ℹ️ Tentang Aplikasi"):
