@@ -116,8 +116,8 @@ class TourismRecommender:
                 'Cagar Alam': 0.3,
                 'Bahari': 0.25,
                 'Budaya': 0.2,
-                'Taman Hiburan': 0.15,
-                'Tempat Ibadah': 0.1,
+                'Taman Hiburan': 0.1,
+                'Tempat Ibadah': 0.15,
                 'Pusat Perbelanjaan': 0.05
             },
             'Family Trip': {
@@ -208,6 +208,16 @@ class TourismRecommender:
         Returns:
             List rekomendasi dengan kategori dan objek wisata
         """
+        # Define logical category alternatives - kategori yang berhubungan secara logis
+        category_alternatives = {
+            'Bahari': ['Cagar Alam', 'Taman Hiburan'],
+            'Budaya': ['Tempat Ibadah', 'Cagar Alam'],
+            'Cagar Alam': ['Bahari', 'Budaya'],
+            'Pusat Perbelanjaan': ['Taman Hiburan', 'Budaya'],
+            'Taman Hiburan': ['Pusat Perbelanjaan', 'Bahari'],
+            'Tempat Ibadah': ['Budaya', 'Cagar Alam']
+        }
+        
         # 1. Dapatkan rekomendasi kategori berdasarkan content-based filtering (ambil semua kategori)
         all_categories = self.get_category_recommendations(user_gender, user_age_group)
         
@@ -260,12 +270,9 @@ class TourismRecommender:
                 recommendations.append({
                     'category': category,
                     'score': {
-        'total': row['Final_Score'],
-        'similarity': row['Similarity'],
-        'boost': row['Boost']
-    },
-                    'similarity': row['Similarity'],
-                    'boost': row['Boost'],
+                        'similarity': row['Similarity'],
+                        'boost': row['Boost']
+                    },
                     'user_match': {
                         'gender': row['Gender'],
                         'age_group': row['Age_Group'],
@@ -281,12 +288,9 @@ class TourismRecommender:
                 recommendations.append({
                     'category': category,
                     'score': {
-        'total': row['Final_Score'],
-        'similarity': row['Similarity'],
-        'boost': row['Boost']
-    },
-                    'similarity': row['Similarity'],
-                    'boost': row['Boost'],
+                        'similarity': row['Similarity'],
+                        'boost': row['Boost']
+                    },
                     'user_match': {
                         'gender': row['Gender'],
                         'age_group': row['Age_Group'],
@@ -308,20 +312,36 @@ class TourismRecommender:
                 if len(self.city_category_places[target_city][cat]) > 0:
                     available_city_categories.add(cat)
         
+        # Konversi boosted_categories ke dictionary untuk akses skor yang lebih mudah
+        # Setiap kategori memiliki skor Final_Score yang digunakan untuk pengurutan
+        boosted_dict = {}
+        for _, row in boosted_categories.iterrows():
+            boosted_dict[row['Category']] = row
+        
         # Tambahkan objek wisata dari kategori lain untuk kategori yang kurang
         for i, rec in enumerate(recommendations):
             if rec['needs_places'] > 0:
                 needed_places = rec['needs_places']
+                current_category = rec['category']
                 
-                # Ambil kategori lain dengan skor tertinggi berikutnya yang tersedia di kota tujuan
-                # dan belum direkomendasikan
-                for _, row in boosted_categories.iterrows():
-                    alt_category = row['Category']
-                    
-                    # Skip jika kategori sudah direkomendasikan atau tidak tersedia di kota tujuan
-                    if alt_category in [r['category'] for r in recommendations] or alt_category not in available_city_categories:
-                        continue
-                    
+                # Ambil daftar kategori alternatif yang masuk akal untuk kategori ini
+                acceptable_alternatives = category_alternatives.get(current_category, [])
+                
+                # Filter kategori alternatif yang tersedia di kota ini dan belum direkomendasikan
+                available_alternatives = []
+                for alt_cat in acceptable_alternatives:
+                    if (alt_cat in available_city_categories and 
+                        alt_cat not in [r['category'] for r in recommendations]):
+                        available_alternatives.append(alt_cat)
+                
+                # Urutkan alternatif berdasarkan Final_Score (dari yang tertinggi)
+                available_alternatives.sort(
+                    key=lambda x: boosted_dict[x]['Final_Score'] if x in boosted_dict else 0,
+                    reverse=True
+                )
+                
+                # Coba setiap alternatif yang tersedia berdasarkan skor tertinggi
+                for alt_category in available_alternatives:
                     # Ambil objek wisata dari kategori alternatif
                     alt_places = self.get_places_for_category_in_city(alt_category, target_city, n_places=needed_places)
                     
@@ -339,5 +359,5 @@ class TourismRecommender:
         for rec in recommendations:
             if 'needs_places' in rec:
                 del rec['needs_places']
-        
+    
         return recommendations
