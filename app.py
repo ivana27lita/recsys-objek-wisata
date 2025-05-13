@@ -515,7 +515,6 @@ def render_recommendations():
         category = recommendation['category']
         score = recommendation.get('score', {'similarity': 0, 'boost': 0})
         places = recommendation['places']
-        user_match = recommendation['user_match']
         alternate_category = recommendation.get('alternate_category')
         
         # Title for card
@@ -544,7 +543,7 @@ def render_recommendations():
         
         # Tampilkan pesan jika kategori ini menggunakan objek wisata dari kategori lain
         if alternate_category:
-            st.info(f"Karena jumlah objek wisata {category} di {user_profile['city']} terbatas, kami juga menampilkan beberapa objek wisata dari kategori {alternate_category} yang juga cocok dengan profil Anda.")
+            st.info(f"Karena data objek wisata {category} di {user_profile['city']} terbatas, kami juga menampilkan beberapa objek wisata dari kategori {alternate_category} yang juga cocok dengan profil Anda.")
         
         # Tampilkan rekomendasi objek wisata
         if len(places) > 0:
