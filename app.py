@@ -1,11 +1,7 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import plotly.express as px
-from PIL import Image
-import os
-import time
-import random
+from streamlit_carousel import carousel
+import streamlit.components.v1 as components
 
 from src.recommender import TourismRecommender
 from src.utils import get_age_group
@@ -18,24 +14,27 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Apply custom CSS for improved appearance (without Bootstrap)
+# Apply custom CSS for improved appearance
 st.markdown("""
 <style>
     /* Main styles with background gradient */
     body {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e4eaff 100%);
+        background: linear-gradient(135deg, #e0f2ff 0%, #d5deff 50%, #e4d5ff 100%);
         background-attachment: fixed;
     }
     .stApp {
         background: rgba(255, 255, 255, 0.1);
     }
     .main-header {
-        font-size: 2.2rem;
-        color: #1E88E5;
-        text-align: center;
-        margin-bottom: 1rem;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-    }
+    font-size: 2.4rem;
+    background: -webkit-linear-gradient(45deg, #1976D2, #5E35B1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin-bottom: 1.2rem;
+    text-shadow: 0px 2px 3px rgba(0,0,0,0.1);
+    font-weight: 800;
+}
     .sub-header {
         font-size: 1.5rem;
         color: #0D47A1;
@@ -43,18 +42,18 @@ st.markdown("""
         margin-bottom: 1rem;
         text-align: center;
     }
-    /* Cards */
-    .card {
-        background-color: rgba(255, 255, 255, 0.85);
-        border-radius: 12px;
+    /* Category cards */
+    .category-card {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 16px;
         padding: 1.5rem;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         margin-bottom: 1.5rem;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         backdrop-filter: blur(5px);
     }
-    .card:hover {
-        transform: translateY(-5px);
+    .category-card:hover {
+        transform: translateY(-3px);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
     }
     .category-header {
@@ -63,49 +62,77 @@ st.markdown("""
         display: flex;
         align-items: center;
     }
-    /* Place cards */
-    .place-card {
-        background-color: white !important;
-        border-radius: 10px;
-        padding: 1.2rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    /* Tourism place cards */
+    .place-card-wrapper {
+        background-color: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
         height: 100%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         display: flex;
         flex-direction: column;
     }
-    .place-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    .place-card-wrapper:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Place image and info section */
+    .place-image {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+    }
+    .place-info {
+        padding: 1rem;
     }
     .place-name {
-        font-size: 1.3rem;
-        font-weight: bold;
-        margin-bottom: 0.6rem;
         color: #1976D2;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
     }
     .place-location {
         display: flex;
         align-items: center;
+        color: #666;
         font-size: 0.9rem;
-        color: #555;
-        margin-bottom: 0.7rem;
+        margin-bottom: 0.5rem;
     }
-    .place-image-container {
-        width: 100%;
-        height: 200px;
-        overflow: hidden;
-        border-radius: 10px;
-        margin-bottom: 1rem;
+    
+    /* Fix Streamlit expander styling to integrate better with card */
+    .stExpander {
+        border: none !important;
+        box-shadow: none !important;
+        background-color: transparent !important;
+        margin: 0 !important;
     }
-    .place-image {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-        border-radius: 10px;
+    .streamlit-expanderHeader {
+        background-color: transparent !important;
+        color: #1976D2 !important;
+        font-size: 0.95rem !important;
+        font-weight: 500 !important;
+        padding: 0.5rem 1rem !important;
+        border-top: 1px solid #f0f0f0 !important;
+        border-bottom: none !important;
     }
-    /* Override Streamlit selectbox */
+    .streamlit-expanderContent {
+        border: none !important;
+        padding: 0 1rem 1rem 1rem !important;
+    }
+    
+    /* Description content */
+    .place-description {
+        color: #444;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    
+    /* Override Streamlit form inputs */
     div[data-baseweb="select"] > div > div {
         background-color: white !important;
         color: black !important;
@@ -116,34 +143,35 @@ st.markdown("""
     div[data-baseweb="select"] > div > div > div {
         color: black !important;
     }
-    /* Override Streamlit number input */
     div[data-baseweb="input"] > div {
         background-color: white !important;
     }
     div[data-baseweb="input"] input {
         color: black !important;
     }
-    /* Override Streamlit form submit button */
+    
+    /* Submit button */
     .stButton > button {
         background-color: #1976D2 !important;
         color: white !important;
         border: none !important;
+        border-radius: 30px !important;
+        padding: 0.5rem 1.5rem !important;
+        font-weight: 500 !important;
+        transition: all 0.3s ease !important;
     }
     .stButton > button:hover {
         background-color: #1565C0 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
     }
-    /* Override Streamlit info messages */
-    div[data-testid="stAlert"] {
-        background-color: #e3f2fd !important;
-        color: #004085 !important;
-        border: 1px solid #bee5eb !important;
-    }
-    /* Custom Success/Error messages */
+    
+    /* Alert messages */
     .custom-success {
         padding: 0.75rem 1.25rem;
         margin-bottom: 1rem;
         border: 1px solid transparent;
-        border-radius: 0.375rem;
+        border-radius: 8px;
         background-color: #d4edda !important;
         border-color: #c3e6cb !important;
         color: #155724 !important;
@@ -152,7 +180,7 @@ st.markdown("""
         padding: 0.75rem 1.25rem;
         margin-bottom: 1rem;
         border: 1px solid transparent;
-        border-radius: 0.375rem;
+        border-radius: 8px;
         background-color: #f8d7da !important;
         border-color: #f5c6cb !important;
         color: #721c24 !important;
@@ -161,11 +189,12 @@ st.markdown("""
         padding: 0.75rem 1.25rem;
         margin-bottom: 1rem;
         border: 1px solid transparent;
-        border-radius: 0.375rem;
+        border-radius: 8px;
         background-color: #e3f2fd !important;
         border-color: #bee5eb !important;
         color: #004085 !important;
     }
+    
     /* Badges */
     .badge {
         background-color: #E3F2FD;
@@ -178,11 +207,24 @@ st.markdown("""
         margin-bottom: 0.3rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    /* Sections */
+    
+    /* Section divider */
     .section-divider {
         margin: 2rem 0;
         border-bottom: 1px solid #e0e0e0;
     }
+    
+    /* Override default streamlit spacing */
+    .element-container {
+        margin-bottom: 0 !important;
+    }
+    
+    /* Custom styling for iframes */
+    iframe {
+        border: none !important;
+        background-color: transparent !important; 
+    }
+    
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .main-header {
@@ -191,36 +233,22 @@ st.markdown("""
         .sub-header {
             font-size: 1.3rem;
         }
-        .card {
+        .category-card {
             padding: 1rem;
         }
-        .place-card {
-            padding: 1rem;
+        .place-info {
+            padding: 0.8rem;
+        }
+        .place-name {
+            font-size: 1.2rem;
         }
         .category-header {
             font-size: 1.4rem;
         }
     }
-    /* Animation for skeleton loading */
-    @keyframes shimmer {
-        0% {
-            background-position: -1000px 0;
-        }
-        100% {
-            background-position: 1000px 0;
-        }
-    }
-    .skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 1000px 100%;
-        animation: shimmer 2s infinite linear;
-        border-radius: 10px;
-        height: 200px;
-        width: 100%;
-        margin-bottom: 1rem;
-    }
 </style>
 """, unsafe_allow_html=True)
+
 
 @st.cache_resource
 def load_recommender():
@@ -232,17 +260,17 @@ def load_tourism_data():
     """Load tourism data with images."""
     try:
         # Try to load from the specific path
-        df = pd.read_csv('2/data/processed/tourism_with_images.csv')
+        df = pd.read_csv('data/processed/tourism_with_images.csv')
         return df
     except FileNotFoundError:
         try:
             # Try alternative path
-            df = pd.read_csv('2/data/processed/tourism_with_images.csv')
+            df = pd.read_csv('data/processed/tourism_with_images.csv')
             return df
         except FileNotFoundError:
             # Fallback to basic tourism data
             st.warning("File tourism_with_images.csv tidak ditemukan. Menggunakan data dasar.")
-            df = pd.read_csv('2/data/processed/tourism_processed.csv')
+            df = pd.read_csv('data/processed/tourism_processed.csv')
             # Add empty image_urls column if it doesn't exist
             if 'image_urls' not in df.columns:
                 df['image_urls'] = ""
@@ -257,30 +285,38 @@ def get_place_images(place):
         image_urls = [url.strip() for url in image_urls if url.strip()]
         return image_urls
     # Return a placeholder if no images
-    return ["https://via.placeholder.com/400x300?text=No+Image+Available"]
+    return ["https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"]
 
 def render_place_card(place, category, idx, use_columns=3):
-    """Render a single place card with single image and description in expander."""
+    """Render a place card with image outside expander."""
     place_id = place.get('Place_Id', 0)
     place_name = place['Place_Name']
     place_city = place['City']
     place_description = place.get('Description', 'Tidak ada deskripsi.')
-    # Get images for the place (only use the first one)
+    
+    # Get image URLs - just use the first image for the card
     image_urls = get_place_images(place)
-    primary_image = image_urls[0] if image_urls else "https://via.placeholder.com/400x300?text=No+Image+Available"
-    # Create a card with single image
-    st.markdown(f"""
-    <div class="place-card">
-        <div class="place-image-container">
-            <img src="{primary_image}" class="place-image" alt="{place_name}">
-        </div>
-        <div class="place-name">{place_name}</div>
-        <div class="place-location">📍 {place_city}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    # Add expander for description
-    with st.expander("Lihat deskripsi"):
-        st.write(place_description)
+    main_image = image_urls[0] if image_urls else "https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"
+    
+    # Create a container for the entire card
+    with st.container():
+        # Create the entire card as a single structure
+        # Image at the top, then name and location, then expander for description
+        st.markdown(f"""
+        <div class="place-card-wrapper">
+            <img src="{main_image}" class="place-image" alt="{place_name}">
+            <div class="place-info">
+                <div class="place-name">{place_name}</div>
+                <div class="place-location">📍 {place_city}</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Add the expander for description only
+        with st.expander("Lihat Deskripsi " + place_name):
+            st.markdown(f'<div class="place-description">{place_description}</div>', unsafe_allow_html=True)
+        
+        # Close the card wrapper div
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def get_gender_options():
     """Get gender options."""
@@ -487,11 +523,11 @@ def render_recommendations():
             boost = 0
             final_score = score
         st.markdown(f"""
-    <div class='card' style='border-left: 5px solid {get_category_color(category)};'>
+    <div class='category-card' style='border-left: 5px solid {get_category_color(category)};'>
         <h3 class='category-header'>
-            {get_category_icon(category)} {category_title} 
-        </h3>
-        <p>{get_category_description(category)}</p>
+            {get_category_icon(category)} {category_title}
+        </h3>         
+        <p>{get_category_description(category)}</p>        
     </div>
 """, unsafe_allow_html=True)
         # Tampilkan pesan jika kategori ini menggunakan objek wisata dari kategori lain
@@ -508,9 +544,10 @@ def render_recommendations():
                     render_place_card(place, category, j, use_columns)
         else:
             st.warning(f"Tidak ditemukan objek wisata untuk kategori {category} di {user_profile['city']}. Silakan coba kota lain atau kategori lain.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Add spacing between categories
         if i < len(st.session_state.recommendations) - 1:
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
 def render_about():
     """Render information about the application."""
@@ -520,7 +557,8 @@ def render_about():
         1. **Content-based Filtering**: Merekomendasikan destinasi berdasarkan kategori dan karakteristik objek wisata
         2. **Collaborative Filtering**: Menggunakan pola preferensi dari pengguna lain dengan profil serupa
         3. **Context-based Filtering**: Mempertimbangkan konteks perjalanan untuk rekomendasi yang lebih personal
-        Algoritma menggunakan cosine similarity untuk menghitung kesesuaian antara profil pengguna dengan pola preferensi
+        
+        Algoritma cosine similarity digunakan untuk menghitung kesesuaian antara profil pengguna dengan pola preferensi
         yang telah diidentifikasi, serta memberikan bobot tambahan berdasarkan tipe perjalanan yang dipilih.
         """)
 

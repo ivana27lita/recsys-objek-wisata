@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
-import os
 import time
 
 class TourismRecommender:
@@ -63,24 +62,25 @@ class TourismRecommender:
         menggunakan content-based filtering (cosine similarity)
         """
         if user_gender == "Tidak ingin menyebutkan":
-            # Cari rules dengan age_group yang sama, tapi ambil yang Total_Users nya tertinggi
-            # untuk setiap kategori (tidak peduli gender)
-            matching_age_rules = self.rules_df[self.rules_df['Age_Group'] == user_age_group]
+            # Pendekatan vektor untuk "Tidak ingin menyebutkan"
+            # Dapatkan representasi vektor untuk kedua gender
+            male_df = pd.DataFrame([["Laki-laki", user_age_group]], columns=['Gender', 'Age_Group'])
+            female_df = pd.DataFrame([["Perempuan", user_age_group]], columns=['Gender', 'Age_Group'])
 
-            # Ambil rules terbaik per kategori (dengan Total_Users tertinggi)
-            best_rules = matching_age_rules.sort_values('Total_Users', ascending=False) \
-                .groupby('Category') \
-                .first() \
-                .reset_index() \
-                .sort_values('Total_Users', ascending=False)
+            encoded_male = self.encoder.transform(male_df).toarray()
+            encoded_female = self.encoder.transform(female_df).toarray()
 
-            # Set similarity = 1.0 karena age_group match
-            best_rules['Similarity'] = 1.0
+            # Buat vektor representasi netral dengan mengambil rata-rata
+            # Ini memberikan probabilitas 0.5 untuk setiap gender
+            encoded_neutral = (encoded_male + encoded_female) / 2
 
-            return best_rules
+            # Transformasi fitur rules
+            rule_features = self.encoder.transform(self.rules_df[['Gender', 'Age_Group']]).toarray()
+
+            # Hitung similarity dengan vektor netral
+            similarities = cosine_similarity(rule_features, encoded_neutral).flatten()
         else:
             # Original code untuk gender standard
-            # Buat vektor user
             user_df = pd.DataFrame([[user_gender, user_age_group]], columns=['Gender', 'Age_Group'])
             encoded_user = self.encoder.transform(user_df).toarray()
 
@@ -90,19 +90,18 @@ class TourismRecommender:
             # Hitung similarity
             similarities = cosine_similarity(rule_features, encoded_user).flatten()
 
-            # Tambahkan similarity ke dataframe rules
-            rules_with_sim = self.rules_df.copy()
-            rules_with_sim['Similarity'] = similarities
+        # Tambahkan similarity ke dataframe rules
+        rules_with_sim = self.rules_df.copy()
+        rules_with_sim['Similarity'] = similarities
 
-            # Ambil best rule untuk tiap kategori
-            best_rules = rules_with_sim.sort_values('Similarity', ascending=False) \
-                .groupby('Category') \
-                .first() \
-                .reset_index() \
-                .sort_values('Similarity', ascending=False)
+        # Ambil best rule untuk tiap kategori
+        best_rules = rules_with_sim.sort_values('Similarity', ascending=False) \
+                              .groupby('Category') \
+                              .first() \
+                              .reset_index() \
+                              .sort_values('Similarity', ascending=False)
 
-            # Ambil semua kategori dengan similarity-nya (tidak hanya top N)
-            return best_rules
+        return best_rules
     
     def apply_context_boost(self, best_rules, user_trip_type):
         """
