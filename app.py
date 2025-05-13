@@ -279,8 +279,6 @@ def get_place_images(place):
     if 'image_urls' in place and place['image_urls']:
         # Split by | to get multiple images
         image_urls = place['image_urls'].split('|')
-        # Filter out empty URLs
-        image_urls = [url.strip() for url in image_urls if url.strip()]
         return image_urls
     # Return a placeholder if no images
     return ["https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"]
@@ -294,27 +292,24 @@ def render_place_card(place, category, idx, use_columns=3):
     
     # Get image URLs - just use the first image for the card
     image_urls = get_place_images(place)
+    
     main_image = image_urls[0] if image_urls else "https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"
     
     # Create a container for the entire card
-    with st.container():
-        # Create the entire card as a single structure
-        # Image at the top, then name and location, then expander for description
-        st.markdown(f"""
+    st.markdown(f"""
         <div class="place-card-wrapper">
             <img src="{main_image}" class="place-image" alt="{place_name}">
             <div class="place-info">
                 <div class="place-name">{place_name}</div>
                 <div class="place-location">📍 {place_city}</div>
             </div>
+        </div>
         """, unsafe_allow_html=True)
         
-        # Add the expander for description only
-        with st.expander("Lihat Deskripsi " + place_name):
-            st.markdown(f'<div class="place-description">{place_description}</div>', unsafe_allow_html=True)
+    # Add the expander for description only
+    with st.expander("Lihat Deskripsi " + place_name):
+        st.markdown(f'<div class="place-description">{place_description}</div>', unsafe_allow_html=True)
         
-        # Close the card wrapper div
-        st.markdown('</div>', unsafe_allow_html=True)
 
 def get_gender_options():
     """Get gender options."""
@@ -418,9 +413,12 @@ def render_header():
 def render_user_profile_form():
     """Render the user profile form."""
     st.markdown("<h2 class='sub-header'>👤 Profil User</h2>", unsafe_allow_html=True)
+    
     with st.form("user_profile_form"):
         st.markdown("<p>Isi profil Anda untuk mendapatkan rekomendasi</p>", unsafe_allow_html=True)
+    
         col1, col2 = st.columns(2)
+    
         with col1:
             gender = st.selectbox(
                 "Jenis Kelamin",
@@ -428,12 +426,14 @@ def render_user_profile_form():
                 index=None,
                 placeholder="Pilih jenis kelamin"
             )
+    
             age = st.number_input(
                 "Umur",
                 min_value=18,
                 max_value=60,
                 step=1
             )
+    
         with col2:
             city = st.selectbox(
                 "Kota Tujuan Wisata",
@@ -441,6 +441,7 @@ def render_user_profile_form():
                 index=None,
                 placeholder="Pilih kota tujuan"
             )
+    
             trip_type = st.selectbox(
                 "Tipe Perjalanan",
                 get_trip_type_options(),
@@ -451,6 +452,7 @@ def render_user_profile_form():
         if submitted:
             if gender and age and city and trip_type:
                 age_group = get_age_group(age)
+                
                 st.session_state.user_profile = {
                     'gender': gender,
                     'age': age,
@@ -458,6 +460,7 @@ def render_user_profile_form():
                     'city': city,
                     'trip_type': trip_type
                 }
+                
                 # Show loading spinner
                 with st.spinner("Mencari rekomendasi terbaik untukmu..."):
                     # Generate recommendations
@@ -466,8 +469,10 @@ def render_user_profile_form():
                         gender, age_group, city, trip_type,
                         n_categories=3, n_places_per_category=3
                     )
+                    
                     # Load tourism data with images
                     tourism_data = load_tourism_data()
+                    
                     # Enrich recommendations with image data
                     for category_rec in recommendations:
                         for place in category_rec['places']:
@@ -477,8 +482,10 @@ def render_user_profile_form():
                             if not matching_place.empty:
                                 place['image_urls'] = matching_place.iloc[0].get('image_urls', '')
                                 place['Category'] = category_rec['category']
+                    
                     st.session_state.recommendations = recommendations
                     st.session_state.show_recommendations = True
+                
                 # Show custom success message
                 custom_success("Rekomendasi berhasil dibuat! Silakan lihat di bawah.")
             else:
@@ -488,8 +495,10 @@ def render_recommendations():
     """Render the recommendations."""
     if not st.session_state.show_recommendations or not st.session_state.recommendations:
         return
+    
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 class='sub-header'>🎯 Rekomendasi Wisata Untukmu</h2>", unsafe_allow_html=True)
+    
     # User profile summary
     user_profile = st.session_state.user_profile
     with st.expander("👤 Profil Pengunjung", expanded=False):
@@ -500,6 +509,7 @@ def render_recommendations():
         with col2:
             st.info(f"**Kota Tujuan:** {user_profile['city']}")
             st.info(f"**Tipe Perjalanan:** {user_profile['trip_type']}")
+    
     # Recommendations
     for i, recommendation in enumerate(st.session_state.recommendations):
         category = recommendation['category']
@@ -507,10 +517,12 @@ def render_recommendations():
         places = recommendation['places']
         user_match = recommendation['user_match']
         alternate_category = recommendation.get('alternate_category')
+        
         # Title for card
         category_title = category
         if alternate_category:
             category_title = f"{category} + {alternate_category}"
+        
         # Handle score format
         if isinstance(score, dict):
             similarity = score.get('similarity', 0)
@@ -520,6 +532,7 @@ def render_recommendations():
             similarity = 0
             boost = 0
             final_score = score
+        
         st.markdown(f"""
     <div class='category-card' style='border-left: 5px solid {get_category_color(category)};'>
         <h3 class='category-header'>
@@ -528,14 +541,17 @@ def render_recommendations():
         <p>{get_category_description(category)}</p>        
     </div>
 """, unsafe_allow_html=True)
+        
         # Tampilkan pesan jika kategori ini menggunakan objek wisata dari kategori lain
         if alternate_category:
-            custom_info(f"Karena jumlah objek wisata {category} di {user_profile['city']} terbatas, kami juga menampilkan beberapa objek wisata dari kategori {alternate_category} yang juga cocok dengan profil Anda.")
+            st.info(f"Karena jumlah objek wisata {category} di {user_profile['city']} terbatas, kami juga menampilkan beberapa objek wisata dari kategori {alternate_category} yang juga cocok dengan profil Anda.")
+        
         # Tampilkan rekomendasi objek wisata
         if len(places) > 0:
             # Create columns for place cards - always use 3 columns or fewer if not enough places
             use_columns = min(3, len(places))
             cols = st.columns(use_columns)
+            
             # Render place cards in columns
             for j, place in enumerate(places):
                 with cols[j % use_columns]:
@@ -543,9 +559,8 @@ def render_recommendations():
         else:
             st.warning(f"Tidak ditemukan objek wisata untuk kategori {category} di {user_profile['city']}. Silakan coba kota lain atau kategori lain.")
         
-        # Add spacing between categories
-        if i < len(st.session_state.recommendations) - 1:
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        # st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
 def render_about():
     """Render information about the application."""
