@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit_carousel import carousel
-import streamlit.components.v1 as components
 
 from src.recommender import TourismRecommender
 from src.utils import get_age_group
