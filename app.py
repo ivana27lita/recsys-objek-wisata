@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from streamlit_carousel import carousel
+import streamlit.components.v1 as components
 
 from src.recommender import TourismRecommender
 from src.utils import get_age_group
@@ -72,7 +74,6 @@ st.markdown("""
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         display: flex;
         flex-direction: column;
-        position: relative; /* ADDED: untuk badge kategori */
     }
     .place-card-wrapper:hover {
         transform: translateY(-5px);
@@ -207,20 +208,6 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
-    /* Category badge - ADDED */
-    .category-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: bold;
-        z-index: 10;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    
     /* Section divider */
     .section-divider {
         margin: 2rem 0;
@@ -236,14 +223,6 @@ st.markdown("""
     iframe {
         border: none !important;
         background-color: transparent !important; 
-    }
-    
-    /* Category section header - ADDED */
-    .category-section-header {
-        margin: 20px 0 10px 0;
-        padding: 5px 0;
-        font-size: 1.2rem;
-        font-weight: 500;
     }
     
     /* Responsive adjustments */
@@ -308,50 +287,37 @@ def get_place_images(place):
     # Return a placeholder if no images
     return ["https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"]
 
-# MODIFIED: Fungsi render_place_card untuk menampilkan badge kategori
 def render_place_card(place, category, idx, use_columns=3):
-    """Render a place card with image outside expander."""
+    """Render a single place card with images and description."""
     place_id = place.get('Place_Id', 0)
     place_name = place['Place_Name']
     place_city = place['City']
     place_description = place.get('Description', 'Tidak ada deskripsi.')
-    
-    # Get image URLs - just use the first image for the card
+
+    # Create unique ID for this description
+    description_id = f"{category}-{place_id}-{idx}"
+
+    # Get images for the place
     image_urls = get_place_images(place)
-    main_image = image_urls[0] if image_urls else "https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"
-    
-    # ADDED: Check if place has a different original category
-    original_category = place.get('Original_Category', category)
-    category_badge = ""
-    if original_category != category:
-        badge_color = get_category_color(original_category)
-        badge_icon = get_category_icon(original_category)
-        category_badge = f"""
-        <div class="category-badge" style="background-color: {badge_color};">
-            {badge_icon} {original_category}
+
+    # Use only the first image for the card
+    primary_image = image_urls[0] if image_urls else "https://via.placeholder.com/400x300?text=No+Image+Available"
+
+    # Create a card with hover effect and collapsible description
+    st.markdown(f"""
+    <div class="place-card">
+        <div class="carousel">
+            <img src="{primary_image}" alt="{place_name}">
         </div>
-        """
-    
-    # Create a container for the entire card
-    with st.container():
-        # Create the entire card as a single structure
-        # Image at the top, then name and location, then expander for description
-        st.markdown(f"""
-        <div class="place-card-wrapper">
-            <img src="{main_image}" class="place-image" alt="{place_name}">
-            <div class="place-info">
-                <div class="place-name">{place_name}</div>
-                <div class="place-location">📍 {place_city}</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Add the expander for description only
-        with st.expander("Lihat Deskripsi " + place_name):
-            st.markdown(f'<div class="place-description">{place_description}</div>', unsafe_allow_html=True)
-        
-        # Close the card wrapper div
-        st.markdown('</div>', unsafe_allow_html=True)
-        
+        <div class="place-name">{place_name}</div>
+        <div class="place-location">📍 {place_city}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Now, use st.expander for the description part
+    with st.expander("Tentang " + place_name):
+        st.write(place_description)
+
 def get_gender_options():
     """Get gender options."""
     return ['Laki-laki', 'Perempuan', 'Tidak ingin menyebutkan']
@@ -451,67 +417,6 @@ def render_header():
         unsafe_allow_html=True
     )
 
-# ADDED: Fungsi untuk memperkaya rekomendasi dengan informasi kategori
-def enrich_recommendations_with_category_info(recommendations, tourism_data):
-    """
-    Memperkaya data rekomendasi dengan informasi kategori yang jelas.
-    
-    Args:
-        recommendations (list): Daftar rekomendasi dari recommender
-        tourism_data (DataFrame): Data pariwisata dengan informasi lengkap
-        
-    Returns:
-        list: Daftar rekomendasi yang diperkaya dengan informasi kategori
-    """
-    # Salin data rekomendasi untuk menghindari modifikasi langsung
-    enriched_recommendations = []
-    
-    for category_rec in recommendations:
-        # Salin informasi kategori
-        category_item = {
-            'category': category_rec['category'],
-            'score': category_rec.get('score', {'similarity': 0, 'boost': 0}),
-            'user_match': category_rec['user_match'],
-            'alternate_category': category_rec.get('alternate_category')
-        }
-        
-        # Proses tempat wisata dengan informasi kategori asli
-        enriched_places = []
-        for place in category_rec['places']:
-            # Salin tempat wisata
-            enriched_place = dict(place)
-            
-            # Cari data lengkap dari dataset
-            place_id = place.get('Place_Id', 0)
-            matching_place = tourism_data[tourism_data['Place_Id'] == place_id]
-            
-            if not matching_place.empty:
-                # Tambahkan URL gambar
-                enriched_place['image_urls'] = matching_place.iloc[0].get('image_urls', '')
-                
-                # Simpan kategori rekomendasi
-                enriched_place['Recommendation_Category'] = category_rec['category']
-                
-                # Simpan kategori asli dari dataset jika tersedia
-                original_category = matching_place.iloc[0].get('Category', category_rec['category'])
-                enriched_place['Original_Category'] = original_category
-                
-                # Tandai objek sebagai bagian dari kategori alternatif jika perlu
-                if (category_rec.get('alternate_category') and 
-                    original_category != category_rec['category'] and 
-                    original_category == category_rec.get('alternate_category')):
-                    enriched_place['is_alternate'] = True
-                else:
-                    enriched_place['is_alternate'] = False
-                
-                enriched_places.append(enriched_place)
-        
-        # Tambahkan tempat wisata yang diperkaya
-        category_item['places'] = enriched_places
-        enriched_recommendations.append(category_item)
-    
-    return enriched_recommendations
-
 def render_user_profile_form():
     """Render the user profile form."""
     st.markdown("<h2 class='sub-header'>👤 Profil User</h2>", unsafe_allow_html=True)
@@ -559,26 +464,28 @@ def render_user_profile_form():
                 with st.spinner("Mencari rekomendasi terbaik untukmu..."):
                     # Generate recommendations
                     recommender = load_recommender()
-                    raw_recommendations = recommender.get_recommendations(
+                    recommendations = recommender.get_recommendations(
                         gender, age_group, city, trip_type,
                         n_categories=3, n_places_per_category=3
                     )
                     # Load tourism data with images
                     tourism_data = load_tourism_data()
-                    
-                    # MODIFIED: Gunakan fungsi baru untuk memperkaya data
-                    enriched_recommendations = enrich_recommendations_with_category_info(
-                        raw_recommendations, tourism_data
-                    )
-                    
-                    st.session_state.recommendations = enriched_recommendations
+                    # Enrich recommendations with image data
+                    for category_rec in recommendations:
+                        for place in category_rec['places']:
+                            # Find image URLs for this place
+                            place_id = place.get('Place_Id', 0)
+                            matching_place = tourism_data[tourism_data['Place_Id'] == place_id]
+                            if not matching_place.empty:
+                                place['image_urls'] = matching_place.iloc[0].get('image_urls', '')
+                                place['Category'] = category_rec['category']
+                    st.session_state.recommendations = recommendations
                     st.session_state.show_recommendations = True
                 # Show custom success message
                 custom_success("Rekomendasi berhasil dibuat! Silakan lihat di bawah.")
             else:
                 custom_error("Mohon lengkapi semua profil user.")
 
-# MODIFIED: Fungsi render_recommendations untuk pemisahan kategori yang lebih jelas
 def render_recommendations():
     """Render the recommendations."""
     if not st.session_state.show_recommendations or not st.session_state.recommendations:
@@ -615,83 +522,31 @@ def render_recommendations():
             similarity = 0
             boost = 0
             final_score = score
-        
-        # Tampilkan card kategori
         st.markdown(f"""
-        <div class='category-card' style='border-left: 5px solid {get_category_color(category)};'>
-            <h3 class='category-header'>
-                {get_category_icon(category)} {category}
-            </h3>         
-            <p>{get_category_description(category)}</p>        
-        </div>
-        """, unsafe_allow_html=True)
-        
+    <div class='card' style='border-left: 5px solid {get_category_color(category)};'>
+        <h3 class='category-header'>
+            {get_category_icon(category)} {category_title} 
+        </h3>
+        <p>{get_category_description(category)}</p>
+    </div>
+""", unsafe_allow_html=True)
         # Tampilkan pesan jika kategori ini menggunakan objek wisata dari kategori lain
-        # MODIFIED: Pesan yang lebih jelas dan menonjol
         if alternate_category:
-            st.markdown(f"""
-            <div class="custom-info" style="font-weight: bold; margin-bottom: 15px; background-color: #e3f2fd !important; padding: 10px; border-left: 4px solid #1976D2;">
-                <p style="margin: 0;"><span style="font-size: 1.1em;">ℹ️ Informasi Kategori</span></p>
-                <p style="margin: 5px 0 0 0;">Karena jumlah objek wisata <b>{category}</b> di <b>{user_profile['city']}</b> terbatas, kami juga menampilkan beberapa objek wisata dari kategori <b>{alternate_category}</b> yang juga cocok dengan profil Anda.</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            custom_info(f"Karena jumlah objek wisata {category} di {user_profile['city']} terbatas, kami juga menampilkan beberapa objek wisata dari kategori {alternate_category} yang juga cocok dengan profil Anda.")
         # Tampilkan rekomendasi objek wisata
         if len(places) > 0:
             # Create columns for place cards - always use 3 columns or fewer if not enough places
             use_columns = min(3, len(places))
             cols = st.columns(use_columns)
-            
-            # ADDED: Pisahkan objek berdasarkan kategori aslinya
-            primary_category_places = []
-            alternate_category_places = []
-            
-            # Identifikasi kategori asli objek
-            for place in places:
-                original_category = place.get('Original_Category', place.get('Category', category))
-                
-                if original_category == category:
-                    primary_category_places.append(place)
-                else:
-                    # Pastikan objek memiliki informasi kategori asli
-                    place['Original_Category'] = original_category
-                    alternate_category_places.append(place)
-            
-            # ADDED: Tampilkan objek dari kategori utama
-            if primary_category_places:
-                if alternate_category:
-                    # Tambahkan header kategori utama jika ada kategori alternatif
-                    st.markdown(f"""
-                    <div class="category-section-header" style="color: {get_category_color(category)};">
-                        {get_category_icon(category)} <b>Objek Wisata {category}</b>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                # Render cards in columns
-                for j, place in enumerate(primary_category_places):
-                    with cols[j % use_columns]:
-                        render_place_card(place, category, j, use_columns)
-            
-            # ADDED: Tampilkan objek dari kategori alternatif secara terpisah
-            if alternate_category_places:
-                # Tambahkan header kategori alternatif
-                st.markdown(f"""
-                <div class="category-section-header" style="color: {get_category_color(alternate_category)}; margin-top: 25px;">
-                    {get_category_icon(alternate_category)} <b>Objek Wisata {alternate_category}</b>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Render cards in columns
-                for j, place in enumerate(alternate_category_places):
-                    with cols[j % use_columns]:
-                        render_place_card(place, category, j, use_columns)
+            # Render place cards in columns
+            for j, place in enumerate(places):
+                with cols[j % use_columns]:
+                    render_place_card(place, category, j, use_columns)
         else:
             st.warning(f"Tidak ditemukan objek wisata untuk kategori {category} di {user_profile['city']}. Silakan coba kota lain atau kategori lain.")
-        
-        # Add spacing between categories
+        st.markdown("</div>", unsafe_allow_html=True)
         if i < len(st.session_state.recommendations) - 1:
-            st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-
+            st.markdown("<br>", unsafe_allow_html=True)
 def render_about():
     """Render information about the application."""
     with st.expander("ℹ️ Tentang Aplikasi"):
