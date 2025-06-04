@@ -535,8 +535,9 @@ def render_recommendations():
         st.markdown(f"""
     <div class='category-card' style='border-left: 5px solid {get_category_color(category)};'>
         <h3 class='category-header'>
-            {get_category_icon(category)} {category_title}
-        </h3>         
+            {get_category_icon(category)} {category_title}<span style='font-size: 1rem; color: gray; margin-left: 10px;'>
+        (Similarity: {score['similarity']:.2f}, Boost: {score['boost']:.2f}) </span>
+        </h3>       
         <p>{get_category_description(category)}</p>        
     </div>
 """, unsafe_allow_html=True)
