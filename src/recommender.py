@@ -122,10 +122,10 @@ class TourismRecommender:
             },
             'Family Trip': {
                 'Taman Hiburan': 0.3,
-                'Pusat Perbelanjaan': 0.15,
+                'Pusat Perbelanjaan': 0.20,
                 'Bahari': 0.2,
                 'Cagar Alam': 0.1,
-                'Budaya': 0.20,
+                'Budaya': 0.15,
                 'Tempat Ibadah': 0.1
             },
             'Couple Trip': {
