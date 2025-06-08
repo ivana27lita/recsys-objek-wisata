@@ -99,7 +99,17 @@ class TourismRecommender:
                               .groupby('Category') \
                               .first() \
                               .reset_index() \
-                              .sort_values('Similarity', ascending=False)
+                              .sort_values('Total_Users', ascending=False)
+        
+        # Tambahkan kolom Collaborative_Score berdasarkan urutan Total_Users
+        collaborative_scores = []
+        
+        for i in range(len(best_rules)):
+            # Skor dimulai dari 6 untuk urutan pertama, turun sampai minimum 1
+            score = max(1, 6 - i)
+            collaborative_scores.append(score)
+        
+        best_rules['Collaborative_Score'] = collaborative_scores
 
         return best_rules
     
@@ -108,41 +118,43 @@ class TourismRecommender:
         Menerapkan context-based filtering dengan memberikan
         bobot tambahan berdasarkan tipe perjalanan
         """
+
+        # Buat salinan dari best_rules untuk menambahkan kolom boost
         rules_with_boost = best_rules.copy()
         
         # Definisi bobot untuk tipe perjalanan per kategori
         trip_type_weights = {
             'Solo Trip': {
-                'Cagar Alam': 0.3,
-                'Bahari': 0.25,
-                'Budaya': 0.2,
-                'Taman Hiburan': 0.1,
-                'Tempat Ibadah': 0.15,
-                'Pusat Perbelanjaan': 0.05
+                'Cagar Alam': 6,
+                'Tempat Ibadah': 5,
+                'Budaya': 4,
+                'Bahari': 3,
+                'Taman Hiburan': 2,
+                'Pusat Perbelanjaan': 1
             },
             'Family Trip': {
-                'Taman Hiburan': 0.3,
-                'Pusat Perbelanjaan': 0.20,
-                'Bahari': 0.2,
-                'Cagar Alam': 0.1,
-                'Budaya': 0.15,
-                'Tempat Ibadah': 0.1
+                'Taman Hiburan': 6,
+                'Pusat Perbelanjaan': 5,
+                'Bahari': 4,
+                'Budaya': 3,
+                'Cagar Alam': 2,
+                'Tempat Ibadah': 1
             },
             'Couple Trip': {
-                'Bahari': 0.3,
-                'Budaya': 0.25,
-                'Taman Hiburan': 0.2,
-                'Pusat Perbelanjaan': 0.15,
-                'Cagar Alam': 0.1,
-                'Tempat Ibadah': 0.05
+                'Bahari': 6,
+                'Budaya': 5,
+                'Taman Hiburan': 4,
+                'Cagar Alam': 3,
+                'Pusat Perbelanjaan': 2,
+                'Tempat Ibadah': 1
             },
             'Friends Trip': {
-                'Taman Hiburan': 0.3, 
-                'Bahari': 0.25,
-                'Pusat Perbelanjaan': 0.1,
-                'Cagar Alam': 0.15,
-                'Budaya': 0.2,
-                'Tempat Ibadah': 0.05
+                'Taman Hiburan': 6, 
+                'Budaya': 5,
+                'Cagar Alam': 4,
+                'Pusat Perbelanjaan': 3,
+                'Bahari': 2,
+                'Tempat Ibadah': 1
             }
         }
         
@@ -154,19 +166,18 @@ class TourismRecommender:
             # Boost berdasarkan kesesuaian tipe perjalanan dengan kategori
             category_weight = trip_type_weights.get(user_trip_type, {}).get(category, 0)
             boost += category_weight
-            
-            # Tambahan: boost jika tipe perjalanan cocok dengan yang ada di rules
-            if row['Tipe_Perjalanan'] == user_trip_type:
-                boost += 0.1
                 
             return boost
         
         # Hitung boost score
-        rules_with_boost['Boost'] = rules_with_boost.apply(get_trip_type_boost, axis=1)
-        
+        rules_with_boost['Context_Score'] = rules_with_boost.apply(get_trip_type_boost, axis=1)
+
         # Hitung final score
-        rules_with_boost['Final_Score'] = rules_with_boost['Similarity'] + rules_with_boost['Boost']
-        
+        rules_with_boost['Final_Score'] = (
+            rules_with_boost['Collaborative_Score'] + 
+            rules_with_boost['Context_Score']
+        )
+
         # Urutkan berdasarkan final score
         return rules_with_boost.sort_values('Final_Score', ascending=False)
     
@@ -271,12 +282,14 @@ class TourismRecommender:
                     'category': category,
                     'score': {
                         'similarity': row['Similarity'],
-                        'boost': row['Boost']
+                        'collaborative_score': row['Collaborative_Score'], 
+                        'context_score': row['Context_Score'],
+                        'final_score': row['Final_Score']
                     },
                     'user_match': {
                         'gender': row['Gender'],
                         'age_group': row['Age_Group'],
-                        'trip_type': row['Tipe_Perjalanan']
+                        'trip_type': user_trip_type
                     },
                     'places': [],
                     'needs_places': n_places_per_category  # Flag untuk diisi dari kategori lain
@@ -289,12 +302,14 @@ class TourismRecommender:
                     'category': category,
                     'score': {
                         'similarity': row['Similarity'],
-                        'boost': row['Boost']
+                        'collaborative_score': row['Collaborative_Score'], 
+                        'context_score': row['Context_Score'],
+                        'final_score': row['Final_Score']
                     },
                     'user_match': {
                         'gender': row['Gender'],
                         'age_group': row['Age_Group'],
-                        'trip_type': row['Tipe_Perjalanan']
+                        'trip_type': user_trip_type
                     },
                     'places': places,
                     'needs_places': needs_more
