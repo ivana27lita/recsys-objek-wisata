@@ -17,8 +17,8 @@ user_agents = [
 
 # File untuk menyimpan progress
 PROGRESS_FILE = "progress.txt"
-INPUT_FILE = "data/processed/tourism_processed.csv"  
-OUTPUT_FILE = "data/processed/tourism_with_images.csv"
+INPUT_FILE = "data/raw/tourism_with_id.csv"  
+OUTPUT_FILE = "data/raw/tourism_with_images.csv"
 
 # Pengaturan timeout
 TIMEOUT = 20  # Ditingkatkan timeout untuk Google Maps yang bisa lambat

@@ -60,7 +60,7 @@ st.markdown("""
         display: flex;
         align-items: center;
     }
-    
+
     /* Tourism place cards */
     .place-card-wrapper {
         background-color: white;
@@ -77,7 +77,7 @@ st.markdown("""
         transform: translateY(-5px);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
-    
+
     /* Place image and info section */
     .place-image {
         width: 100%;
@@ -101,7 +101,7 @@ st.markdown("""
         font-size: 0.9rem;
         margin-bottom: 0.5rem;
     }
-    
+
     /* Fix Streamlit expander styling to integrate better with card */
     .stExpander {
         border: none !important;
@@ -122,14 +122,14 @@ st.markdown("""
         border: none !important;
         padding: 0 1rem 1rem 1rem !important;
     }
-    
+
     /* Description content */
     .place-description {
         color: #444;
         font-size: 0.95rem;
         line-height: 1.5;
     }
-    
+
     /* Override Streamlit form inputs */
     div[data-baseweb="select"] > div > div {
         background-color: white !important;
@@ -147,7 +147,7 @@ st.markdown("""
     div[data-baseweb="input"] input {
         color: black !important;
     }
-    
+
     /* Submit button */
     .stButton > button {
         background-color: #1976D2 !important;
@@ -163,7 +163,7 @@ st.markdown("""
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
     }
-    
+
     /* Alert messages */
     .custom-success {
         padding: 0.75rem 1.25rem;
@@ -192,7 +192,7 @@ st.markdown("""
         border-color: #bee5eb !important;
         color: #004085 !important;
     }
-    
+
     /* Badges */
     .badge {
         background-color: #E3F2FD;
@@ -205,24 +205,24 @@ st.markdown("""
         margin-bottom: 0.3rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    
+
     /* Section divider */
     .section-divider {
         margin: 2rem 0;
         border-bottom: 1px solid #e0e0e0;
     }
-    
+
     /* Override default streamlit spacing */
     .element-container {
         margin-bottom: 0 !important;
     }
-    
+
     /* Custom styling for iframes */
     iframe {
         border: none !important;
-        background-color: transparent !important; 
+        background-color: transparent !important;
     }
-    
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .main-header {
@@ -253,6 +253,7 @@ def load_recommender():
     """Load the recommender model (cached)."""
     return TourismRecommender()
 
+
 @st.cache_data
 def load_tourism_data():
     """Load tourism data with images."""
@@ -267,12 +268,11 @@ def load_tourism_data():
             return df
         except FileNotFoundError:
             # Fallback to basic tourism data
-            st.warning("File tourism_with_images.csv tidak ditemukan. Menggunakan data dasar.")
+            st.warning(
+                "File tourism_with_images.csv tidak ditemukan. Menggunakan data dasar.")
             df = pd.read_csv('data/processed/tourism_processed.csv')
-            # Add empty image_urls column if it doesn't exist
-            if 'image_urls' not in df.columns:
-                df['image_urls'] = ""
             return df
+
 
 def get_place_images(place):
     """Get image URLs for a place."""
@@ -283,18 +283,18 @@ def get_place_images(place):
     # Return a placeholder if no images
     return ["https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"]
 
-def render_place_card(place, category, idx, use_columns=3):
+
+def render_place_card(place):
     """Render a place card with image outside expander."""
-    place_id = place.get('Place_Id', 0)
     place_name = place['Place_Name']
     place_city = place['City']
     place_description = place.get('Description', 'Tidak ada deskripsi.')
-    
+
     # Get image URLs - just use the first image for the card
     image_urls = get_place_images(place)
-    
+
     main_image = image_urls[0] if image_urls else "https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"
-    
+
     # Create a container for the entire card
     st.markdown(f"""
         <div class="place-card-wrapper">
@@ -305,23 +305,27 @@ def render_place_card(place, category, idx, use_columns=3):
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
+
     # Add the expander for description only
     with st.expander("Lihat Deskripsi " + place_name):
-        st.markdown(f'<div class="place-description">{place_description}</div>', unsafe_allow_html=True)
-        
+        st.markdown(
+            f'<div class="place-description">{place_description}</div>', unsafe_allow_html=True)
+
 
 def get_gender_options():
     """Get gender options."""
     return ['Laki-laki', 'Perempuan', 'Tidak ingin menyebutkan']
 
+
 def get_city_options():
     """Get city options."""
     return ['Jakarta', 'Bandung', 'Semarang', 'Yogyakarta', 'Surabaya']
 
+
 def get_trip_type_options():
     """Get trip type options."""
     return ['Solo Trip', 'Couple Trip', 'Family Trip', 'Friends Trip']
+
 
 def get_category_icon(category):
     """Get icon for each category."""
@@ -335,6 +339,7 @@ def get_category_icon(category):
     }
     return icons.get(category, '🏞️')
 
+
 def get_category_color(category):
     """Get color for each category."""
     colors = {
@@ -347,6 +352,7 @@ def get_category_color(category):
     }
     return colors.get(category, '#607D8B')  # Default: Blue Grey
 
+
 def get_category_description(category):
     """Get description for each category."""
     descriptions = {
@@ -354,10 +360,11 @@ def get_category_description(category):
         'Budaya': 'Wisata budaya mencakup museum, situs sejarah, dan atraksi budaya lokal.',
         'Cagar Alam': 'Wisata alam mencakup taman nasional, gunung, dan kawasan konservasi.',
         'Pusat Perbelanjaan': 'Pusat perbelanjaan seperti mall, pasar tradisional, dan kawasan belanja serta kuliner.',
-        'Taman Hiburan': 'Taman hiburan seperti taman bermain, wahana rekreasi, dan tempat hiburan.',
+        'Taman Hiburan': 'Taman hiburan seperti taman kota, taman rekreasi, dan tempat hiburan.',
         'Tempat Ibadah': 'Tempat ibadah seperti masjid, gereja, pura, dan vihara bersejarah.'
     }
     return descriptions.get(category, 'Destinasi wisata populer di Indonesia.')
+
 
 def initialize_session_state():
     """Initialize session state variables."""
@@ -374,6 +381,7 @@ def initialize_session_state():
     if 'show_recommendations' not in st.session_state:
         st.session_state.show_recommendations = False
 
+
 def custom_success(message):
     """Custom success message that's not affected by theme."""
     st.markdown(f"""
@@ -381,6 +389,7 @@ def custom_success(message):
         {message}
     </div>
     """, unsafe_allow_html=True)
+
 
 def custom_error(message):
     """Custom error message that's not affected by theme."""
@@ -390,6 +399,7 @@ def custom_error(message):
     </div>
     """, unsafe_allow_html=True)
 
+
 def custom_info(message):
     """Custom info message that's not affected by theme."""
     st.markdown(f"""
@@ -398,169 +408,20 @@ def custom_info(message):
     </div>
     """, unsafe_allow_html=True)
 
+
 def render_header():
     """Render the application header."""
-    st.markdown("<h1 class='main-header'>Indonesia Tourism Recommender</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-header'>Indonesia Tourism Recommender</h1>",
+                unsafe_allow_html=True)
     st.markdown(
         """
         <p style='text-align: center; font-size: 1.2rem;'>
         Temukan destinasi wisata sesuai preferensi dan gaya perjalananmu!
         </p>
-        """, 
+        """,
         unsafe_allow_html=True
     )
 
-def render_user_profile_form():
-    """Render the user profile form."""
-    st.markdown("<h2 class='sub-header'>👤 Profil User</h2>", unsafe_allow_html=True)
-    
-    with st.form("user_profile_form"):
-        st.markdown("<p>Isi profil Anda untuk mendapatkan rekomendasi</p>", unsafe_allow_html=True)
-    
-        col1, col2 = st.columns(2)
-    
-        with col1:
-            gender = st.selectbox(
-                "Jenis Kelamin",
-                get_gender_options(),
-                index=None,
-                placeholder="Pilih jenis kelamin"
-            )
-    
-            age = st.number_input(
-                "Umur",
-                min_value=18,
-                max_value=60,
-                step=1
-            )
-    
-        with col2:
-            city = st.selectbox(
-                "Kota Tujuan Wisata",
-                get_city_options(),
-                index=None,
-                placeholder="Pilih kota tujuan"
-            )
-    
-            trip_type = st.selectbox(
-                "Tipe Perjalanan",
-                get_trip_type_options(),
-                index=None,
-                placeholder="Pilih tipe perjalanan"
-            )
-        submitted = st.form_submit_button("Dapatkan Rekomendasi", use_container_width=True)
-        if submitted:
-            if gender and age and city and trip_type:
-                age_group = get_age_group(age)
-                
-                st.session_state.user_profile = {
-                    'gender': gender,
-                    'age': age,
-                    'age_group': age_group,
-                    'city': city,
-                    'trip_type': trip_type
-                }
-                
-                # Show loading spinner
-                with st.spinner("Mencari rekomendasi terbaik untukmu..."):
-                    # Generate recommendations
-                    recommender = load_recommender()
-                    recommendations = recommender.get_recommendations(
-                        gender, age_group, city, trip_type,
-                        n_categories=3, n_places_per_category=3
-                    )
-                    
-                    # Load tourism data with images
-                    tourism_data = load_tourism_data()
-                    
-                    # Enrich recommendations with image data
-                    for category_rec in recommendations:
-                        for place in category_rec['places']:
-                            # Find image URLs for this place
-                            place_id = place.get('Place_Id', 0)
-                            matching_place = tourism_data[tourism_data['Place_Id'] == place_id]
-                            if not matching_place.empty:
-                                place['image_urls'] = matching_place.iloc[0].get('image_urls', '')
-                                place['Category'] = category_rec['category']
-                    
-                    st.session_state.recommendations = recommendations
-                    st.session_state.show_recommendations = True
-                
-                # Show custom success message
-                custom_success("Rekomendasi berhasil dibuat! Silakan lihat di bawah.")
-            else:
-                custom_error("Mohon lengkapi semua profil user.")
-
-def render_recommendations():
-    """Render the recommendations."""
-    if not st.session_state.show_recommendations or not st.session_state.recommendations:
-        return
-    
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 class='sub-header'>🎯 Rekomendasi Wisata Untukmu</h2>", unsafe_allow_html=True)
-    
-    # User profile summary
-    user_profile = st.session_state.user_profile
-    with st.expander("👤 Profil Pengunjung", expanded=False):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info(f"**Jenis Kelamin:** {user_profile['gender']}")
-            st.info(f"**Umur:** {user_profile['age']} ({user_profile['age_group']})")
-        with col2:
-            st.info(f"**Kota Tujuan:** {user_profile['city']}")
-            st.info(f"**Tipe Perjalanan:** {user_profile['trip_type']}")
-    
-    # Recommendations
-    for i, recommendation in enumerate(st.session_state.recommendations):
-        category = recommendation['category']
-        score = recommendation.get('score', {'similarity': 0, 'boost': 0})
-        places = recommendation['places']
-        alternate_category = recommendation.get('alternate_category')
-        
-        # Title for card
-        category_title = category
-        if alternate_category:
-            category_title = f"{category} + {alternate_category}"
-        
-        # Handle score format
-        if isinstance(score, dict):
-            similarity = score.get('similarity', 0)
-            boost = score.get('boost', 0)
-            final_score = similarity + boost
-        else:
-            similarity = 0
-            boost = 0
-            final_score = score
-        
-        st.markdown(f"""
-    <div class='category-card' style='border-left: 5px solid {get_category_color(category)};'>
-        <h3 class='category-header'>
-            {get_category_icon(category)} {category_title}<span style='font-size: 1rem; color: gray; margin-left: 10px;'>
-        (Similarity: {score['similarity']:.2f}, Boost: {score['boost']:.2f}) </span>
-        </h3>       
-        <p>{get_category_description(category)}</p>        
-    </div>
-""", unsafe_allow_html=True)
-        
-        # Tampilkan pesan jika kategori ini menggunakan objek wisata dari kategori lain
-        if alternate_category:
-            st.info(f"Karena data objek wisata {category} di {user_profile['city']} terbatas, kami juga menampilkan beberapa objek wisata dari kategori {alternate_category} yang juga cocok dengan profil Anda.")
-        
-        # Tampilkan rekomendasi objek wisata
-        if len(places) > 0:
-            # Create columns for place cards - always use 3 columns or fewer if not enough places
-            use_columns = min(3, len(places))
-            cols = st.columns(use_columns)
-            
-            # Render place cards in columns
-            for j, place in enumerate(places):
-                with cols[j % use_columns]:
-                    render_place_card(place, category, j, use_columns)
-        else:
-            st.warning(f"Tidak ditemukan objek wisata untuk kategori {category} di {user_profile['city']}. Silakan coba kota lain atau kategori lain.")
-        
-        st.markdown("</div>", unsafe_allow_html=True)
-        # st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
 def render_about():
     """Render information about the application."""
@@ -569,11 +430,190 @@ def render_about():
         **Indonesia Tourism Recommender** adalah aplikasi rekomendasi wisata yang menggunakan:
         1. **Content-based Filtering**: Merekomendasikan destinasi berdasarkan kategori dan karakteristik objek wisata
         2. **Collaborative Filtering**: Menggunakan pola preferensi dari pengguna lain dengan profil serupa
-        3. **Context-based Filtering**: Mempertimbangkan konteks perjalanan untuk rekomendasi yang lebih personal
-        
+        3. **Context-aware Filtering**: Mempertimbangkan konteks perjalanan untuk rekomendasi yang lebih personal
+
         Algoritma cosine similarity digunakan untuk menghitung kesesuaian antara profil pengguna dengan pola preferensi
         yang telah diidentifikasi, serta memberikan bobot tambahan berdasarkan tipe perjalanan yang dipilih.
         """)
+
+
+def render_user_profile_form():
+    """Render the user profile form."""
+    st.markdown("<h2 class='sub-header'>👤 Profil User</h2>",
+                unsafe_allow_html=True)
+
+    with st.form("user_profile_form"):
+        st.markdown(
+            "<p>Isi profil Anda untuk mendapatkan rekomendasi</p>", unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            gender = st.selectbox(
+                "Jenis Kelamin",
+                get_gender_options(),
+                index=None,
+                placeholder="Pilih jenis kelamin"
+            )
+
+            age = st.number_input(
+                "Umur",
+                min_value=18,
+                max_value=60,
+                step=1
+            )
+
+        with col2:
+            city = st.selectbox(
+                "Kota Tujuan Wisata",
+                get_city_options(),
+                index=None,
+                placeholder="Pilih kota tujuan"
+            )
+
+            trip_type = st.selectbox(
+                "Tipe Perjalanan",
+                get_trip_type_options(),
+                index=None,
+                placeholder="Pilih tipe perjalanan"
+            )
+        submitted = st.form_submit_button(
+            "Dapatkan Rekomendasi", use_container_width=True)
+        if submitted:
+            if gender and age and city and trip_type:
+                age_group = get_age_group(age)
+
+                st.session_state.user_profile = {
+                    'gender': gender,
+                    'age': age,
+                    'age_group': age_group,
+                    'city': city,
+                    'trip_type': trip_type
+                }
+
+                # Show loading spinner
+                with st.spinner("Mencari rekomendasi terbaik untukmu..."):
+                    # Generate recommendations
+                    recommender = load_recommender()
+                    recommendations = recommender.get_recommendations(
+                        gender, age_group, city, trip_type,
+                        n_categories=3, n_places_per_category=3
+                    )
+
+                    # Load tourism data with images
+                    tourism_data = load_tourism_data()
+
+                    # Enrich recommendations with image data
+                    for category_rec in recommendations:
+                        for place in category_rec['places']:
+                            # Find image URLs for this place
+                            place_id = place.get('Place_Id', 0)
+                            matching_place = tourism_data[tourism_data['Place_Id'] == place_id]
+                            if not matching_place.empty:
+                                place['image_urls'] = matching_place.iloc[0].get(
+                                    'image_urls', '')
+                                place['Category'] = category_rec['category']
+
+                    st.session_state.recommendations = recommendations
+                    st.session_state.show_recommendations = True
+
+                # Show custom success message
+                custom_success(
+                    "Rekomendasi berhasil dibuat! Silakan lihat di bawah.")
+            else:
+                custom_error("Mohon lengkapi semua profil user.")
+
+
+def render_recommendations():
+    """Render the recommendations."""
+    if not st.session_state.show_recommendations or not st.session_state.recommendations:
+        return
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 class='sub-header'>🎯 Rekomendasi Wisata Untukmu</h2>",
+                unsafe_allow_html=True)
+
+    # User profile summary
+    user_profile = st.session_state.user_profile
+    with st.expander("👤 Profil Pengunjung", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info(f"**Jenis Kelamin:** {user_profile['gender']}")
+            st.info(
+                f"**Umur:** {user_profile['age']} ({user_profile['age_group']})")
+        with col2:
+            st.info(f"**Kota Tujuan:** {user_profile['city']}")
+            st.info(f"**Tipe Perjalanan:** {user_profile['trip_type']}")
+
+    # Recommendations
+    for recommendation in st.session_state.recommendations:
+        category = recommendation['category']
+        score = recommendation.get('score', {})
+        places = recommendation['places']
+        alternate_category = recommendation.get('alternate_category')
+
+        # Title for card
+        category_title = category
+        if alternate_category:
+            category_title = f"{category} + {alternate_category}"
+
+        # Get values for each component
+        collaborative_score = score.get('collaborative_score', 0.0)
+        context_score = score.get('context_score', 0.0)
+        final_score = score.get('final_score', 0.0)
+        similarity = score.get('similarity', 0.0)
+
+        # Menampilkan hasil scoring dengan terminologi yang diperbaiki
+        st.markdown(
+            f"""
+            <div class='category-card' style='border-left: 5px solid {get_category_color(category)};'>
+            <h3 class='category-header'>
+                {get_category_icon(category)} {category_title}
+                <span style='font-size: 1rem; color: #666; margin-left: 10px; font-weight: normal;'>
+                Final Score: {final_score:.1f}
+                </span>
+            </h3>
+            <div style='margin-bottom: 1rem; font-size: 0.9rem;'>
+                <div style='display: flex; gap: 15px; margin-bottom: 0.5rem;'>
+                <span style='background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px;'>
+                    📊 Content-Based: {similarity:.3f}
+                </span>
+                <span style='background: #e8f5e8; color: #2e7d32; padding: 4px 10px; border-radius: 12px;'>
+                    👥 Popularity Weight: {collaborative_score:.0f}
+                </span>
+                <span style='background: #fff3e0; color: #f57c00; padding: 4px 10px; border-radius: 12px;'>
+                    🧭 Trip Type Weight: {context_score:.0f}
+                </span>
+                </div>
+                <div style='font-size: 0.8em; color: #666; font-style: italic;'>
+                * Final Score = Popularity Weight ({collaborative_score:.0f}) + Trip Type Weight ({context_score:.0f}) = {final_score:.1f}
+                </div>
+            </div>
+            <p>{get_category_description(category)}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Tampilkan pesan jika kategori ini menggunakan objek wisata dari kategori lain
+        if alternate_category:
+            st.info(
+                f"Karena data objek wisata {category} di {user_profile['city']} terbatas, kami juga menampilkan beberapa objek wisata dari kategori {alternate_category} yang juga cocok dengan profil Anda."
+            )
+
+        # Tampilkan rekomendasi objek wisata
+        if len(places) > 0:
+            # Create columns for place cards - always use 3 columns or fewer if not enough places
+            use_columns = min(3, len(places))
+            cols = st.columns(use_columns)
+
+            # Render place cards in columns
+            for j, place in enumerate(places):
+                with cols[j % use_columns]:
+                    render_place_card(place)
+        else:
+            st.warning(
+                f"Tidak ditemukan objek wisata untuk kategori {category} di {user_profile['city']}. Silakan coba kota lain atau kategori lain."
+            )
+
 
 def main():
     """Main application."""
@@ -582,6 +622,7 @@ def main():
     render_about()
     render_user_profile_form()
     render_recommendations()
+
 
 if __name__ == "__main__":
     main()
