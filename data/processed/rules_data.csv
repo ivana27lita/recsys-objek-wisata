@@ -1,49 +1,49 @@
-Category,Gender,Age_Group,User Location,Tipe_Perjalanan,Total_Users
-Bahari,Perempuan,Mature Adult,Jawa Barat,Friends Trip,77
-Bahari,Laki-laki,Adult,Jawa Barat,Family Trip,69
-Bahari,Laki-laki,Mature Adult,Jawa Barat,Friends Trip,58
-Bahari,Perempuan,Adult,Jawa Tengah,Friends Trip,53
-Bahari,Perempuan,Teen/College,Jawa Barat,Friends Trip,46
-Bahari,Perempuan,Young Adult,Jawa Barat,Friends Trip,41
-Bahari,Laki-laki,Teen/College,Sumatera Selatan,Friends Trip,38
-Bahari,Laki-laki,Young Adult,Jawa Barat,Friends Trip,38
-Budaya,Perempuan,Mature Adult,Jawa Barat,Friends Trip,197
-Budaya,Perempuan,Adult,Jawa Barat,Friends Trip,149
-Budaya,Perempuan,Young Adult,Jawa Barat,Friends Trip,138
-Budaya,Laki-laki,Mature Adult,Jawa Barat,Friends Trip,135
-Budaya,Laki-laki,Teen/College,Jawa Barat,Friends Trip,132
-Budaya,Laki-laki,Adult,Jawa Barat,Family Trip,129
-Budaya,Laki-laki,Young Adult,Jawa Barat,Friends Trip,119
-Budaya,Perempuan,Teen/College,Jawa Barat,Friends Trip,90
-Cagar Alam,Perempuan,Mature Adult,Jawa Barat,Friends Trip,195
-Cagar Alam,Laki-laki,Adult,Jawa Barat,Friends Trip,149
-Cagar Alam,Laki-laki,Mature Adult,Jawa Barat,Friends Trip,130
-Cagar Alam,Perempuan,Adult,Jawa Barat,Friends Trip,121
-Cagar Alam,Perempuan,Young Adult,Jawa Barat,Friends Trip,114
-Cagar Alam,Laki-laki,Teen/College,Sumatera Selatan,Friends Trip,111
-Cagar Alam,Laki-laki,Young Adult,Jawa Barat,Friends Trip,97
-Cagar Alam,Perempuan,Teen/College,Jawa Barat,Family Trip,93
-Pusat Perbelanjaan,Perempuan,Mature Adult,Jawa Barat,Friends Trip,26
-Pusat Perbelanjaan,Laki-laki,Adult,Jawa Barat,Family Trip,24
-Pusat Perbelanjaan,Perempuan,Young Adult,Jawa Barat,Friends Trip,23
-Pusat Perbelanjaan,Perempuan,Teen/College,Jawa Barat,Couple Trip,19
-Pusat Perbelanjaan,Laki-laki,Teen/College,Jawa Barat,Friends Trip,16
-Pusat Perbelanjaan,Laki-laki,Young Adult,Jawa Timur,Friends Trip,14
-Pusat Perbelanjaan,Laki-laki,Mature Adult,Jawa Barat,Friends Trip,12
-Pusat Perbelanjaan,Perempuan,Adult,Jawa Barat,Friends Trip,8
-Taman Hiburan,Perempuan,Mature Adult,Jawa Barat,Friends Trip,237
-Taman Hiburan,Laki-laki,Adult,Jawa Barat,Friends Trip,193
-Taman Hiburan,Perempuan,Adult,Jawa Barat,Friends Trip,170
-Taman Hiburan,Laki-laki,Mature Adult,Jawa Barat,Family Trip,158
-Taman Hiburan,Laki-laki,Young Adult,Jawa Barat,Family Trip,146
-Taman Hiburan,Laki-laki,Teen/College,Jawa Barat,Friends Trip,135
-Taman Hiburan,Perempuan,Young Adult,DIY,Family Trip,133
-Taman Hiburan,Perempuan,Teen/College,Jawa Barat,Friends Trip,130
-Tempat Ibadah,Perempuan,Mature Adult,Jawa Barat,Friends Trip,26
-Tempat Ibadah,Laki-laki,Adult,Jawa Barat,Friends Trip,23
-Tempat Ibadah,Perempuan,Adult,DKI Jakarta,Family Trip,22
-Tempat Ibadah,Laki-laki,Mature Adult,Jawa Barat,Family Trip,21
-Tempat Ibadah,Laki-laki,Teen/College,Jawa Barat,Family Trip,20
-Tempat Ibadah,Perempuan,Teen/College,Jawa Barat,Family Trip,19
-Tempat Ibadah,Perempuan,Young Adult,DIY,Friends Trip,17
-Tempat Ibadah,Laki-laki,Young Adult,Jawa Timur,Couple Trip,16
+Gender,Age_Group,Category,Total_Users
+Laki-laki,Young Adult,Taman Hiburan,146
+Laki-laki,Young Adult,Budaya,119
+Laki-laki,Young Adult,Cagar Alam,97
+Laki-laki,Young Adult,Bahari,38
+Laki-laki,Young Adult,Tempat Ibadah,16
+Laki-laki,Young Adult,Pusat Perbelanjaan,14
+Laki-laki,Teen/College,Taman Hiburan,135
+Laki-laki,Teen/College,Budaya,132
+Laki-laki,Teen/College,Cagar Alam,111
+Laki-laki,Teen/College,Bahari,38
+Laki-laki,Teen/College,Tempat Ibadah,20
+Laki-laki,Teen/College,Pusat Perbelanjaan,16
+Laki-laki,Mature Adult,Taman Hiburan,158
+Laki-laki,Mature Adult,Budaya,135
+Laki-laki,Mature Adult,Cagar Alam,130
+Laki-laki,Mature Adult,Bahari,58
+Laki-laki,Mature Adult,Tempat Ibadah,21
+Laki-laki,Mature Adult,Pusat Perbelanjaan,12
+Laki-laki,Adult,Taman Hiburan,193
+Laki-laki,Adult,Cagar Alam,149
+Laki-laki,Adult,Budaya,129
+Laki-laki,Adult,Bahari,69
+Laki-laki,Adult,Pusat Perbelanjaan,24
+Laki-laki,Adult,Tempat Ibadah,23
+Perempuan,Young Adult,Budaya,138
+Perempuan,Young Adult,Taman Hiburan,133
+Perempuan,Young Adult,Cagar Alam,114
+Perempuan,Young Adult,Bahari,41
+Perempuan,Young Adult,Pusat Perbelanjaan,23
+Perempuan,Young Adult,Tempat Ibadah,17
+Perempuan,Teen/College,Taman Hiburan,130
+Perempuan,Teen/College,Cagar Alam,93
+Perempuan,Teen/College,Budaya,90
+Perempuan,Teen/College,Bahari,46
+Perempuan,Teen/College,Pusat Perbelanjaan,19
+Perempuan,Teen/College,Tempat Ibadah,19
+Perempuan,Mature Adult,Taman Hiburan,237
+Perempuan,Mature Adult,Budaya,197
+Perempuan,Mature Adult,Cagar Alam,195
+Perempuan,Mature Adult,Bahari,77
+Perempuan,Mature Adult,Pusat Perbelanjaan,26
+Perempuan,Mature Adult,Tempat Ibadah,26
+Perempuan,Adult,Taman Hiburan,170
+Perempuan,Adult,Budaya,149
+Perempuan,Adult,Cagar Alam,121
+Perempuan,Adult,Bahari,53
+Perempuan,Adult,Tempat Ibadah,22
+Perempuan,Adult,Pusat Perbelanjaan,8
