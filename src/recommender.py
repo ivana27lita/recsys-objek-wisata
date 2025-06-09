@@ -219,15 +219,6 @@ class TourismRecommender:
         Returns:
             List rekomendasi dengan kategori dan objek wisata
         """
-        # Define logical category alternatives - kategori yang berhubungan secara logis
-        category_alternatives = {
-            'Bahari': ['Cagar Alam', 'Taman Hiburan'],
-            'Budaya': ['Tempat Ibadah', 'Cagar Alam'],
-            'Cagar Alam': ['Bahari', 'Budaya'],
-            'Pusat Perbelanjaan': ['Taman Hiburan', 'Budaya'],
-            'Taman Hiburan': ['Pusat Perbelanjaan', 'Bahari'],
-            'Tempat Ibadah': ['Budaya', 'Cagar Alam']
-        }
         
         # 1. Dapatkan rekomendasi kategori berdasarkan content-based filtering (ambil semua kategori)
         all_categories = self.get_category_recommendations(user_gender, user_age_group)
@@ -235,144 +226,32 @@ class TourismRecommender:
         # 2. Terapkan context boosting berdasarkan tipe perjalanan
         boosted_categories = self.apply_context_boost(all_categories, user_trip_type)
         
-        # 3. Filter kategori yang tersedia di kota tujuan
-        available_categories = []
-        unavailable_categories = []
-        
-        for _, row in boosted_categories.iterrows():
-            category = row['Category']
-            if target_city in self.city_category_places and category in self.city_category_places[target_city]:
-                n_places = len(self.city_category_places[target_city][category])
-                if n_places > 0:
-                    available_categories.append((category, row, n_places))
-                else:
-                    unavailable_categories.append((category, row))
-            else:
-                unavailable_categories.append((category, row))
-        
-        # 4. Pilih kategori yang akan direkomendasikan
-        selected_categories = []
-        
-        # Tambahkan kategori yang tersedia di kota tujuan
-        for category, row, n_places in available_categories:
-            if len(selected_categories) < n_categories:
-                selected_categories.append((category, row))
-            else:
-                break
-        
-        # Jika masih kurang, tambahkan dari kategori yang tidak tersedia
-        # (ini akan ditangani dengan mengambil dari kategori lain dengan similaritas tertinggi berikutnya)
-        for category, row in unavailable_categories:
-            if len(selected_categories) < n_categories:
-                selected_categories.append((category, row))
-            else:
-                break
-        
-        # 5. Dapatkan objek wisata untuk setiap kategori
+        # 3. Ambil top n_categories dengan skor tertinggi
+        top_categories = boosted_categories.head(n_categories)
+
+        # 4. Dapatkan objek wisata untuk setiap kategori
         recommendations = []
-        categories_with_places = []
-        
-        for category, row in selected_categories:
+
+        for _, row in top_categories.iterrows():
+            category = row['Category']
             places = self.get_places_for_category_in_city(category, target_city, n_places=n_places_per_category)
             
-            # Jika tidak ada objek wisata untuk kategori ini di kota tujuan,
-            # tandai untuk diisi nanti dari kategori lain
-            if len(places) == 0:
-                recommendations.append({
-                    'category': category,
-                    'score': {
-                        'similarity': row['Similarity'],
-                        'collaborative_score': row['Collaborative_Score'], 
-                        'context_score': row['Context_Score'],
-                        'final_score': row['Final_Score']
-                    },
-                    'user_match': {
-                        'gender': row['Gender'],
-                        'age_group': row['Age_Group'],
-                        'trip_type': user_trip_type
-                    },
-                    'places': [],
-                    'needs_places': n_places_per_category  # Flag untuk diisi dari kategori lain
-                })
-            else:
-                # Jika tidak cukup, tandai berapa objek wisata yang masih dibutuhkan
-                needs_more = max(0, n_places_per_category - len(places))
-                
-                recommendations.append({
-                    'category': category,
-                    'score': {
-                        'similarity': row['Similarity'],
-                        'collaborative_score': row['Collaborative_Score'], 
-                        'context_score': row['Context_Score'],
-                        'final_score': row['Final_Score']
-                    },
-                    'user_match': {
-                        'gender': row['Gender'],
-                        'age_group': row['Age_Group'],
-                        'trip_type': user_trip_type
-                    },
-                    'places': places,
-                    'needs_places': needs_more
-                })
-                
-                # Simpan kategori ini jika memiliki objek wisata (untuk digunakan nanti)
-                if len(places) > 0:
-                    categories_with_places.append(category)
-        
-        # 6. Cari kategori lain dengan skor tertinggi berikutnya untuk mengisi kategori yang kurang objek wisata
-        # Ambil semua kategori yang tersedia di kota tujuan (yang memiliki objek wisata)
-        available_city_categories = set()
-        if target_city in self.city_category_places:
-            for cat in self.city_category_places[target_city]:
-                if len(self.city_category_places[target_city][cat]) > 0:
-                    available_city_categories.add(cat)
-        
-        # Konversi boosted_categories ke dictionary untuk akses skor yang lebih mudah
-        # Setiap kategori memiliki skor Final_Score yang digunakan untuk pengurutan
-        boosted_dict = {}
-        for _, row in boosted_categories.iterrows():
-            boosted_dict[row['Category']] = row
-        
-        # Tambahkan objek wisata dari kategori lain untuk kategori yang kurang
-        for i, rec in enumerate(recommendations):
-            if rec['needs_places'] > 0:
-                needed_places = rec['needs_places']
-                current_category = rec['category']
-                
-                # Ambil daftar kategori alternatif yang masuk akal untuk kategori ini
-                acceptable_alternatives = category_alternatives.get(current_category, [])
-                
-                # Filter kategori alternatif yang tersedia di kota ini dan belum direkomendasikan
-                available_alternatives = []
-                for alt_cat in acceptable_alternatives:
-                    if (alt_cat in available_city_categories and 
-                        alt_cat not in [r['category'] for r in recommendations]):
-                        available_alternatives.append(alt_cat)
-                
-                # Urutkan alternatif berdasarkan Final_Score (dari yang tertinggi)
-                available_alternatives.sort(
-                    key=lambda x: boosted_dict[x]['Final_Score'] if x in boosted_dict else 0,
-                    reverse=True
-                )
-                
-                # Coba setiap alternatif yang tersedia berdasarkan skor tertinggi
-                for alt_category in available_alternatives:
-                    # Ambil objek wisata dari kategori alternatif
-                    alt_places = self.get_places_for_category_in_city(alt_category, target_city, n_places=needed_places)
-                    
-                    if len(alt_places) > 0:
-                        # Tambahkan ke rekomendasi
-                        recommendations[i]['places'].extend(alt_places)
-                        recommendations[i]['needs_places'] = max(0, needed_places - len(alt_places))
-                        recommendations[i]['alternate_category'] = alt_category
-                        
-                        # Jika sudah cukup, break
-                        if recommendations[i]['needs_places'] == 0:
-                            break
-        
-        # 7. Hapus field 'needs_places' yang tidak perlu ditampilkan ke user
-        for rec in recommendations:
-            if 'needs_places' in rec:
-                del rec['needs_places']
+            recommendations.append({
+                'category': category,
+                'score': {
+                    'similarity': row['Similarity'],
+                    'collaborative_score': row['Collaborative_Score'], 
+                    'context_score': row['Context_Score'],
+                    'final_score': row['Final_Score']
+                },
+                'user_match': {
+                    'gender': row['Gender'],
+                    'age_group': row['Age_Group'],
+                    'trip_type': user_trip_type
+                },
+                'places': places,
+                'places_found': len(places),  # Menambahkan info jumlah objek wisata yang ditemukan
+                'places_requested': n_places_per_category  # Menambahkan info jumlah yang diminta
+            })
     
         return recommendations
