@@ -192,6 +192,15 @@ st.markdown("""
         border-color: #bee5eb !important;
         color: #004085 !important;
     }
+    .custom-warning {
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background-color: #fff3cd !important;
+        border-color: #ffeaa7 !important;
+        color: #856404 !important;
+    }
 
     /* Badges */
     .badge {
@@ -409,6 +418,15 @@ def custom_info(message):
     """, unsafe_allow_html=True)
 
 
+def custom_warning(message):
+    """Custom warning message that's not affected by theme."""
+    st.markdown(f"""
+    <div class="custom-warning">
+        {message}
+    </div>
+    """, unsafe_allow_html=True)
+
+
 def render_header():
     """Render the application header."""
     st.markdown("<h1 class='main-header'>Indonesia Tourism Recommender</h1>",
@@ -550,12 +568,8 @@ def render_recommendations():
         category = recommendation['category']
         score = recommendation.get('score', {})
         places = recommendation['places']
-        alternate_category = recommendation.get('alternate_category')
-
-        # Title for card
-        category_title = category
-        if alternate_category:
-            category_title = f"{category} + {alternate_category}"
+        places_found = recommendation.get('places_found', 0)
+        places_requested = recommendation.get('places_requested', 3)
 
         # Get values for each component
         collaborative_score = score.get('collaborative_score', 0.0)
@@ -568,7 +582,7 @@ def render_recommendations():
             f"""
             <div class='category-card' style='border-left: 5px solid {get_category_color(category)};'>
             <h3 class='category-header'>
-                {get_category_icon(category)} {category_title}
+                {get_category_icon(category)} {category}
                 <span style='font-size: 1rem; color: #666; margin-left: 10px; font-weight: normal;'>
                 Final Score: {final_score:.1f}
                 </span>
@@ -593,11 +607,18 @@ def render_recommendations():
             </div>
             """, unsafe_allow_html=True)
 
-        # Tampilkan pesan jika kategori ini menggunakan objek wisata dari kategori lain
-        if alternate_category:
-            st.info(
-                f"Karena data objek wisata {category} di {user_profile['city']} terbatas, kami juga menampilkan beberapa objek wisata dari kategori {alternate_category} yang juga cocok dengan profil Anda."
-            )
+        # Tampilkan pesan jika data objek wisata terbatas
+        if places_found < places_requested:
+            if places_found == 0:
+                custom_warning(
+                    f"⚠️ Tidak ditemukan objek wisata untuk kategori {category} di {user_profile['city']}. "
+                    f"Silakan coba kota lain atau lihat kategori lainnya."
+                )
+            else:
+                custom_info(
+                    f"ℹ️ Karena data objek wisata {category} di {user_profile['city']} terbatas, "
+                    f"hanya menampilkan {places_found} dari {places_requested} objek wisata yang diminta."
+                )
 
         # Tampilkan rekomendasi objek wisata
         if len(places) > 0:
@@ -609,10 +630,6 @@ def render_recommendations():
             for j, place in enumerate(places):
                 with cols[j % use_columns]:
                     render_place_card(place)
-        else:
-            st.warning(
-                f"Tidak ditemukan objek wisata untuk kategori {category} di {user_profile['city']}. Silakan coba kota lain atau kategori lain."
-            )
 
 
 def main():
