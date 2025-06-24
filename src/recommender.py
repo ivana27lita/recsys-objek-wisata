@@ -13,7 +13,15 @@ class TourismRecommender:
         # Load data yang sudah diproses
         self.tourism_df = pd.read_csv(f'{data_path}/tourism_processed.csv')
         self.rules_df = pd.read_csv(f'{data_path}/rules_data.csv')
-        
+        self.avg_place_ratings = pd.read_csv(f'{data_path}/avg_place_ratings.csv')
+
+        # Manggabungkan deskripsi objek wisata ke dalam avg_place_ratings
+        self.avg_place_ratings = self.avg_place_ratings.merge(
+        self.tourism_df[['Place_Id', 'Description']], 
+        on='Place_Id', 
+        how='left'
+    )
+
         # Load encoder
         with open(f'{models_path}/encoder.pkl', 'rb') as f:
             self.encoder = pickle.load(f)
@@ -56,7 +64,7 @@ class TourismRecommender:
                 category_places = city_places[city_places['Category'] == category]
                 self.city_category_places[city][category] = category_places[['Place_Id', 'Place_Name', 'City', 'Description']].to_dict('records')
     
-    def get_category_recommendations(self, user_gender, user_age_group, n_categories=3):
+    def get_category_recommendations(self, user_gender, user_age_group):
         """
         Mendapatkan rekomendasi kategori berdasarkan profil pengguna
         menggunakan content-based filtering (cosine similarity)
@@ -181,30 +189,68 @@ class TourismRecommender:
         # Urutkan berdasarkan final score
         return rules_with_boost.sort_values('Final_Score', ascending=False)
     
-    def get_places_for_category_in_city(self, category, city, n_places=3):
+    def get_places_for_category_in_city(self, category, city, user_gender, user_age_group, n_places=3):
         """
-        Mendapatkan objek wisata untuk kategori tertentu di kota tertentu.
+        Mendapatkan objek wisata untuk kategori tertentu di kota tertentu 
+        berdasarkan rating tertinggi dari user dengan demografis serupa.
         """
-        # Generate seed unik untuk memastikan variasi
-        seed = int(time.time() * 1000) % 2**32
-        np.random.seed(seed)
-        
-        # Cek apakah kategori ada di kota target
-        if city in self.city_category_places and category in self.city_category_places[city]:
-            places_in_city = self.city_category_places[city][category]
+        if user_gender == "Tidak ingin menyebutkan":
+        # Ambil top places dari kedua gender dengan age_group serupa
+            male_places = self.avg_place_ratings[
+                (self.avg_place_ratings['Gender'] == 'Laki-laki') &
+                (self.avg_place_ratings['Age_Group'] == user_age_group) &
+                (self.avg_place_ratings['Category'] == category) &
+                (self.avg_place_ratings['City'] == city)
+            ].head(n_places)
             
-            # Jika jumlah objek cukup, pilih secara acak
-            if len(places_in_city) >= n_places:
-                selected_indices = np.random.choice(len(places_in_city), n_places, replace=False)
-                return [places_in_city[i] for i in selected_indices]
+            female_places = self.avg_place_ratings[
+                (self.avg_place_ratings['Gender'] == 'Perempuan') &
+                (self.avg_place_ratings['Age_Group'] == user_age_group) &
+                (self.avg_place_ratings['Category'] == category) &
+                (self.avg_place_ratings['City'] == city)
+            ].head(n_places)
             
-            # Jika tidak cukup, ambil semua yang ada
-            return places_in_city
-        
-        # Jika tidak ada objek untuk kategori ini di kota target
-        return []
+            # Gabungkan dan sort berdasarkan rating
+            combined_places = pd.concat([male_places, female_places]).drop_duplicates('Place_Id')
+            combined_places = combined_places.sort_values(['Avg_Rating', 'Rating_Count'], ascending=[False, False]).head(n_places)
+            
+            # Convert ke format yang dibutuhkan
+            places_list = []
+            for _, place in combined_places.iterrows():
+                places_list.append({
+                    'Place_Id': place['Place_Id'],
+                    'Place_Name': place['Place_Name'],
+                    'City': place['City'],
+                    'Description': place.get('Description', 'Tidak ada deskripsi.'),
+                    'Avg_Rating': place['Avg_Rating'],
+                    'Rating_Count': place['Rating_Count']
+                })
+            
+            return places_list
+        else:
+            # Filter berdasarkan demografis user yang spesifik
+            filtered_places = self.avg_place_ratings[
+                (self.avg_place_ratings['Gender'] == user_gender) &
+                (self.avg_place_ratings['Age_Group'] == user_age_group) &
+                (self.avg_place_ratings['Category'] == category) &
+                (self.avg_place_ratings['City'] == city)
+            ].head(n_places)
+            
+            # Convert ke format yang dibutuhkan
+            places_list = []
+            for _, place in filtered_places.iterrows():
+                places_list.append({
+                    'Place_Id': place['Place_Id'],
+                    'Place_Name': place['Place_Name'],
+                    'City': place['City'],
+                    'Description': place.get('Description', 'Tidak ada deskripsi.'),
+                    'Avg_Rating': place['Avg_Rating'],
+                    'Rating_Count': place['Rating_Count']
+                })
+            
+            return places_list
     
-    def get_recommendations(self, user_gender, user_age_group, target_city, user_trip_type, n_categories=3, n_places_per_category=3):
+    def get_recommendations(self, user_gender, user_age_group, target_city, user_trip_type, n_categories=6, n_places_per_category=3):
         """
         Generate rekomendasi lengkap untuk user.
         
@@ -226,7 +272,7 @@ class TourismRecommender:
         # 2. Terapkan context boosting berdasarkan tipe perjalanan
         boosted_categories = self.apply_context_boost(all_categories, user_trip_type)
         
-        # 3. Ambil top n_categories dengan skor tertinggi
+        # 3. Ambil semua kategori dengan skor tertinggi (6 kategori)
         top_categories = boosted_categories.head(n_categories)
 
         # 4. Dapatkan objek wisata untuk setiap kategori
@@ -234,7 +280,7 @@ class TourismRecommender:
 
         for _, row in top_categories.iterrows():
             category = row['Category']
-            places = self.get_places_for_category_in_city(category, target_city, n_places=n_places_per_category)
+            places = self.get_places_for_category_in_city(category, target_city, user_gender, user_age_group, n_places=n_places_per_category)
             
             recommendations.append({
                 'category': category,
@@ -250,8 +296,8 @@ class TourismRecommender:
                     'trip_type': user_trip_type
                 },
                 'places': places,
-                'places_found': len(places),  # Menambahkan info jumlah objek wisata yang ditemukan
-                'places_requested': n_places_per_category  # Menambahkan info jumlah yang diminta
+                'places_found': len(places),  
+                'places_requested': n_places_per_category  
             })
     
         return recommendations
