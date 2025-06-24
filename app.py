@@ -202,6 +202,15 @@ st.markdown("""
         color: #856404 !important;
     }
 
+    .place-rating {
+        display: flex;
+        align-items: center;
+        color: #ff6b35;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
     /* Badges */
     .badge {
         background-color: #E3F2FD;
@@ -298,24 +307,31 @@ def render_place_card(place):
     place_name = place['Place_Name']
     place_city = place['City']
     place_description = place.get('Description', 'Tidak ada deskripsi.')
+    avg_rating = place.get('Avg_Rating', 0)
+    rating_count = place.get('Rating_Count', 0)
 
-    # Get image URLs - just use the first image for the card
+    # Get image URLs - mengambil gambar dari data
+    # tourism_with_images.csv yang sudah diproses
     image_urls = get_place_images(place)
 
-    main_image = image_urls[0] if image_urls else "https://via.placeholder.com/800x400?text=Tidak+Ada+Gambar"
+    main_image = image_urls[0] if image_urls else "https://desmacenter.com/assets/pages/img/works/informasi-menyambut%20wonderful%20indonesia-post_1553164416_logo_wonderful_indonesia.jpg"
 
-    # Create a container for the entire card
+    # Membuat card untuk tempat wisata
     st.markdown(f"""
         <div class="place-card-wrapper">
             <img src="{main_image}" class="place-image" alt="{place_name}">
             <div class="place-info">
                 <div class="place-name">{place_name}</div>
                 <div class="place-location">📍 {place_city}</div>
+                <div class="place-rating" style="color: #ff6b35; font-weight: 600; margin-bottom: 0.5rem;" 
+                     title="Rating dari pengunjung dengan profil serupa">
+                    Rating dari profil serupa: ⭐ {avg_rating:.1f} /5
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # Add the expander for description only
+    # Menampilkan deskripsi tempat wisata
     with st.expander("Lihat Deskripsi " + place_name):
         st.markdown(
             f'<div class="place-description">{place_description}</div>', unsafe_allow_html=True)
@@ -445,6 +461,8 @@ def render_about():
     """Render information about the application."""
     with st.expander("ℹ️ Tentang Aplikasi"):
         st.markdown("""
+        🎯 Cara Kerja Aplikasi
+                    
         **Indonesia Tourism Recommender** adalah aplikasi rekomendasi wisata yang menggunakan:
         1. **Content-based Filtering**: Merekomendasikan destinasi berdasarkan kategori dan karakteristik objek wisata
         2. **Collaborative Filtering**: Menggunakan pola preferensi dari pengguna lain dengan profil serupa
@@ -452,6 +470,12 @@ def render_about():
 
         Algoritma cosine similarity digunakan untuk menghitung kesesuaian antara profil pengguna dengan pola preferensi
         yang telah diidentifikasi, serta memberikan bobot tambahan berdasarkan tipe perjalanan yang dipilih.
+       
+        📊 Hasil Rekomendasi    
+                                    
+        Aplikasi menampilkan semua kategori wisata yang diurutkan berdasarkan tingkat kesesuaian dengan profil dan konteks 
+        perjalanan Anda. Setiap kategori menunjukkan skor final dan menampilkan 3 objek wisata terbaik yang diurutkan berdasarkan 
+        rating tertinggi dari wisatawan dengan profil demografis serupa.
         """)
 
 
@@ -480,6 +504,13 @@ def render_user_profile_form():
                 max_value=60,
                 step=1
             )
+            st.caption("""
+            **Detail kelompok usia:**
+            Teen/College (18-22 tahun);
+            Young Adult (23-27 tahun);
+            Adult (28-32 tahun);
+            Mature Adult (di atas 32 tahun)
+            """)
 
         with col2:
             city = st.selectbox(
@@ -515,7 +546,7 @@ def render_user_profile_form():
                     recommender = load_recommender()
                     recommendations = recommender.get_recommendations(
                         gender, age_group, city, trip_type,
-                        n_categories=3, n_places_per_category=3
+                        n_categories=6, n_places_per_category=3
                     )
 
                     # Load tourism data with images
@@ -540,6 +571,7 @@ def render_user_profile_form():
                     "Rekomendasi berhasil dibuat! Silakan lihat di bawah.")
             else:
                 custom_error("Mohon lengkapi semua profil user.")
+        
 
 
 def render_recommendations():
@@ -553,7 +585,7 @@ def render_recommendations():
 
     # User profile summary
     user_profile = st.session_state.user_profile
-    with st.expander("👤 Profil Pengunjung", expanded=False):
+    with st.expander("👤 Profil Pengunjung", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
             st.info(f"**Jenis Kelamin:** {user_profile['gender']}")
@@ -562,6 +594,7 @@ def render_recommendations():
         with col2:
             st.info(f"**Kota Tujuan:** {user_profile['city']}")
             st.info(f"**Tipe Perjalanan:** {user_profile['trip_type']}")
+        
 
     # Recommendations
     for recommendation in st.session_state.recommendations:
